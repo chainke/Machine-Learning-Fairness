@@ -9,11 +9,38 @@ file_name_start = 'results/out_'
 param_table_cap = 9
 
 
-def generate_data(n, pF, pp, disc):
 
+def generate_data(n, pF, pp, disc):
+    """
+        Generates data array according to paper.
+        This happens by generating two sets:
+        Set 1 makes up ?% and is created completely in a random and not discrimination way.
+        Set 2 makes up 100 - ?% and is created in a maximal discriminating way.
+
+        Parameters
+        ----------
+        n: int
+            Number of all individuals
+        pF: int
+            ???
+        pp: int
+            ???
+        disc: float
+            discrimination fraction
+            eg. 0.5 for 50% discrimination rate
+
+        Returns
+        -------
+        data:
+            data set with given discrimination rate
+    """
+
+    # number of females
     nF = round(pF * n)
+    # number of males
     nM = n - nF
 
+    # ???
     npos = round(pp * n)
 
     if (disc < 0):
@@ -23,19 +50,34 @@ def generate_data(n, pF, pp, disc):
         do_reverse = 0
 
 
-    data = runif(n, 0, 1)
-    s = c(rep('F', nF), rep('M', nM))
+    # data = runif(n, 0, 1)
+    data = list(numpy.random.uniform(0, 1, n))
+
+    # s is the list of the combination of a list with nF times 'F' and a list with NM times 'M'
+    # s = c(rep('F', nF), rep('M', nM))
+    s = 'F' * nF + 'M' * nM
 
     nswapF = round(nF * disc)
     nswapM = round(nM * disc)
 
-    if ((nswapF + nswapM) > 0):
+    if (nswapF + nswapM) > 0:
+        # ind_pick is a list of chosen indices by
+        # ind_pick = c(1: nswapF, (nF + 1): (nF + nswapM))
+        # ind_pick = 1: nswapF +  (nF + 1): (nF + nswapM)
+        ind_pick = range(1, nswapF) + range(nF + 1, nF + nswapM)
 
-        ind_pick = c(1: nswapF, (nF + 1): (nF + nswapM))
-        data_pick = data[ind_pick]
-        ind = order(data_pick)
-        ind_pick_sorted = ind_pick[ind]
+        # data_pick = data[ind_pick]
+        # choose elements of chosen indices from data
+        data_pick = [data[x] for x in ind_pick]
 
+        # list of indices in ascending order from data_pick
+        # ind = order(data_pick)
+        ind = sorted(data_pick)
+        # sorted of list in ascending order
+        # ind_pick_sorted = ind_pick[ind]
+        ind_pick_sorted = [ind_pick[x] for x in ind]
+
+        # TODO re-compute all variables
         if (do_reverse):
             s[ind_pick_sorted] = c(rep('M', nswapM), rep('F', nswapF))
         else:

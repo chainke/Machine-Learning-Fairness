@@ -1,5 +1,6 @@
 import numpy
 import math
+import scipy.stats as stats
 
 param_cik = 100
 param_n = 10000
@@ -20,19 +21,20 @@ def generate_data(n, pF, pp, disc):
         Parameters
         ----------
         n: int
-            Number of all individuals
-        pF: int
-            ???
-        pp: int
-            ???
+            number of individuals
+        pF: float
+            proportion of females
+        pp: float
+            proportion of positive outcome
         disc: float
-            discrimination fraction
+            the underlying discrimination
             eg. 0.5 for 50% discrimination rate
 
         Returns
         -------
         data:
             data set with given discrimination rate
+            three rows containing:
     """
 
     # number of females
@@ -40,7 +42,7 @@ def generate_data(n, pF, pp, disc):
     # number of males
     nM = n - nF
 
-    # ???
+    # number of positive outcomes
     npos = round(pp * n)
 
     if (disc < 0):
@@ -64,7 +66,7 @@ def generate_data(n, pF, pp, disc):
         # ind_pick is a list of chosen indices by
         # ind_pick = c(1: nswapF, (nF + 1): (nF + nswapM))
         # ind_pick = 1: nswapF +  (nF + 1): (nF + nswapM)
-        ind_pick = range(1, nswapF) + range(nF + 1, nF + nswapM)
+        ind_pick = range(1, nswapF + 1) + range(nF + 1, nF + nswapM + 1)
 
         # data_pick = data[ind_pick]
         # choose elements of chosen indices from data
@@ -96,12 +98,18 @@ def generate_data(n, pF, pp, disc):
     colnames(data) = c('y', 'c', 's')
     return (data)
 
+
+# Use scipy.stats.entropy instead!
 def compute_ent (xx)  # already a table
-    ind = which(xx > 0)
-    xx = xx[ind]
-    H = -sum(math.log2(xx) * xx)
+    # ind = which(xx > 0) # Look which indices are greater than 0
+    # xx = xx[ind] # Take those
+    # H = -sum(math.log2(xx) * xx) # Calculate what?
+
+    xx_pos = [x for x in xx if x > 0]
+    H = -sum([math.log2(x) * x for x in xx_pos])
     return (H)
 
+# TODO:
 def measure_disc(data):
 
     n = dim(data)[1]
@@ -126,24 +134,32 @@ def measure_disc(data):
     delift = (pjoint['1', 'M'] / ps['M']) / pc['1']
     dolift = (pjoint['1', 'M'] / pjoint['1', 'F']) / (pjoint['0', 'M'] / pjoint['0', 'F'])
 
-    Hc = compute_ent(pc)
-    Hs = compute_ent(ps)
-    MI = Hc + Hs - compute_ent(pjoint)
+    Hc = stats.entropy(pc)
+    Hs = stats.entropy(ps)
+    MI = Hc + Hs - stats.entropy(pjoint)
     MInorm = MI / math.sqrt(Hc * Hs)
 
     dd = cbind(ddif, ddnorm, dratio, delift, dolift, MInorm)
     return (dd)
 
+for pF in [x / 10.0 for x in range(1, 11, 2)]:
+# for (pF in seq(0.1, 0.9, 0.2)):
 
-for (pF in seq(0.1, 0.9, 0.2)):
+    for pp in [x / 10.0 for x in range(1, 11, 2)]:
+    # for (pp in seq(0.1, 0.9, 0.2)):
 
-    for (pp in seq(0.1, 0.9, 0.2)):
+            # Initialise array?
+            # ddall = c()
 
-            ddall = c()
-            for (disc in seq(-1, 1, 0.1)):
+            for disc in [x / 10.0 for x in range(-10, 11, 1)]:
+            # for (disc in seq(-1, 1, 0.1)):
 
-                dd = c()
-                for (sk2 in 1: param_cik):
+                # Initialise?
+                # dd = c()
+
+                # TODO:
+                for sk2 in range(1, param_cik + 1):
+                # for (sk2 in 1: param_cik):
 
                     data1 = generate_data(param_n, pF, pp, disc)
                     dd = rbind(dd, measure_disc(data1))

@@ -10,7 +10,7 @@ file_name_start = 'results/out_'
 param_table_cap = 9
 
 
-
+# TODO: np.array as output
 def generate_data(n, pF, pp, disc):
     """
         Generates data array according to paper.

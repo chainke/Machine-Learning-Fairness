@@ -146,44 +146,54 @@ def generate_data(n, pF, pp, disc):
 #     H = -sum([math.log2(x) * x for x in xx_pos])
 #     return (H)
 
-# TODO:
-# def measure_disc(data):
-#
-#     # n = dim(data)[1]
-#     n = len(data)
-#     # proportion of subgroups (here M, F) in data
-#     ps = table(data[, 's']) / n
-#
-#     # proportion of classification results in data
-#     pc = table(data[, 'c']) / n
-#
-#     pjoint = table(data[, 'c'], data[, 's']) / n
-#
-#     ddif = pjoint['1', 'M'] / ps['M'] - pjoint['1', 'F'] / ps['F']
-#
-#     if (ddif > 0):
-#
-#         m1 = pc['1'] / ps['M']
-#         m2 = pc['0'] / ps['F']
-#     else:
-#         m1 = pc['1'] / ps['F']
-#         m2 = pc['0'] / ps['M']
-#
-#     dmax = min(m1, m2)
-#     ddnorm = ddif / dmax
-#
-#     dratio = (pjoint['1', 'M'] / ps['M']) / (pjoint['1', 'F'] / ps['F'])
-#     delift = (pjoint['1', 'M'] / ps['M']) / pc['1']
-#     dolift = (pjoint['1', 'M'] / pjoint['1', 'F']) / (pjoint['0', 'M'] / pjoint['0', 'F'])
-#
-#     Hc = stats.entropy(pc)
-#     Hs = stats.entropy(ps)
-#     MI = Hc + Hs - stats.entropy(pjoint)
-#     MInorm = MI / math.sqrt(Hc * Hs)
-#
-#     dd = cbind(ddif, ddnorm, dratio, delift, dolift, MInorm)
-#     return (dd)
-#
+# TODO: Test this function thoroughly
+def measure_disc(data):
+
+    # n = dim(data)[1]
+    n = len(data)
+    # proportion of subgroups (here M, F) in data by key
+    # ps = table(data[, 's']) / n
+    ps = dict((x, data[2].count(x)) for x in set(data[2]))
+
+    # proportion of classification results in data by key
+    # pc = table(data[, 'c']) / n
+    pc = dict((x, data[1].count(x)) for x in set(data[1]))
+
+    # pjoint = table(data[, 'c'], data[, 's']) / n
+    data_array = np.array(data)
+
+    pjoint = {}
+    keys_c = list(set(data_array.T[1]))
+    keys_s = list(set(data_array.T[2]))
+    for x in keys_c:
+        for y in keys_s:
+            pjoint[(x, y)] = data_array.T[1:2].T.tolist().count([x, y])
+
+
+    ddif = pjoint[('1', 'M')] / ps['M'] - pjoint[('1', 'F')] / ps['F']
+
+    if ddif > 0:
+
+        m1 = pc['1'] / ps['M']
+        m2 = pc['0'] / ps['F']
+    else:
+        m1 = pc['1'] / ps['F']
+        m2 = pc['0'] / ps['M']
+
+    dmax = min(m1, m2)
+    ddnorm = ddif / dmax
+
+    dratio = (pjoint[('1', 'M')] / ps['M']) / (pjoint['1', 'F'] / ps['F'])
+    delift = (pjoint[('1', 'M')] / ps['M']) / pc['1']
+    dolift = (pjoint[('1', 'M')] / pjoint[('1', 'F')]) / (pjoint[('0', 'M')] / pjoint[('0', 'F')])
+
+    Hc = stats.entropy(pc)
+    Hs = stats.entropy(ps)
+    MI = Hc + Hs - stats.entropy(pjoint)
+    MInorm = MI / math.sqrt(Hc * Hs)
+
+    return (ddif, ddnorm, dratio, delift, dolift, MInorm)
+
 # for pF in [x / 10.0 for x in range(1, 11, 2)]:
 # # for (pF in seq(0.1, 0.9, 0.2)):
 #
@@ -223,8 +233,8 @@ def generate_data(n, pF, pp, disc):
 #             pp * 100), '.dat', sep = '')
 #         print(file_name_now)
 #         write.table(ddall, file=file_name_now, row.names = FALSE, col.names = TRUE, sep = ' ', quote = FALSE)
-#
 
-data = generate_data(10, 0.5, 0.5, 0.5)
-for i in range(len(data)):
-    print(data[i])
+
+# data = generate_data(10, 0.5, 0.5, 0.5)
+# for i in range(len(data)):
+#     print(data[i])

@@ -38,9 +38,6 @@ A person will receive a credit (y=1) if they fulfill 2 of the 3 criteria:
         Married = 1
 
 
-Therefore a woman with 3 children and 0 years unemployed will be classified as 0, a male will never be classified as 0 depending on the
-amount of children with perfect work attendance.
-
 
 Example
 v = []  protected feature (gender, 1 = female)
@@ -50,105 +47,125 @@ v = []  protected feature (gender, 1 = female)
     []  married (1 for married)
 """
 
-max_children = 5
-max_income = 50000
-max_unemployed = 10
 
-approval_income = 20000
-approval_absent_time = 7
-approval_married = 1
-
-number_of_criteria = 2
+class CreditData:
 
 
-def generate_protected_feature_data(number_of_points, proportion_of_males, seed=13):
-
-    random.seed(seed)
-
-    v = list(np.zeros(number_of_points))
-
-    for i in range(0, number_of_points):
-        if random.random() >= proportion_of_males:
-            v[i] = 1
-
-    return v
+    __max_children = 5
+    __max_income = 50000
+    __max_unemployed = 10
+    __approval_income = 20000
+    __approval_absent_time = 7
+    __approval_married = 1
+    __number_of_criteria = 2
 
 
-def generate_other_features(data):
+    def __init__(self, child, income,unemployed, ap_income, ap_unemployed, number_criteria):
+        self.__max_children = child
+        self.__max_unemployed= unemployed
+        self.__max_income = income
+        self.__approval_income = ap_income
+        self.__approval_absent_time = ap_unemployed
+        self.__number_of_criteria = number_criteria
+        self.__approval_married = 1
 
-    new_data = [[data[i],                           # gender
-                 random.randint(0, max_children),   # children
-                 random.randint(0, max_income),     # income
-                 0,                                 # time unemployed, depends on number of children
-                 random.randint(0, 1)]              # married
-                for i in range(0, len(data))]
+    def generate_protected_feature_data(self, number_of_points, proportion_of_males, seed=13):
 
-    for i in range(0, len(data)):
-        new_data[i][3] = random.uniform(0, max_unemployed) + new_data[i][1] * (0.5 + 0.5*new_data[i][0])
+        random.seed(seed)
 
-    return new_data
+        v = list(np.zeros(number_of_points))
 
+        for i in range(0, number_of_points):
+            if random.random() >= proportion_of_males:
+                v[i] = 1
 
-def classify(data):
-
-    for i in range(0, len(data)):
-        data[i].append(0)
-        approval = 0
-        if data[i][2] >= approval_income:
-            approval = approval+1
-        if data[i][3] < approval_absent_time:
-            approval = approval+1
-        if data[i][4] == approval_married:
-            approval = approval+1
-
-        if approval >= number_of_criteria:
-            data[i][5] = 1
+        return v
 
 
-n = 10000
-p = 0.5
+    def generate_other_features(self, data):
 
-v = generate_protected_feature_data(n, p)
-v_c = generate_other_features(v)
-classify(v_c)
+        new_data = [[data[i],                           # gender
+                     random.randint(0, self.__max_children),   # children
+                     random.randint(0, self.__max_income),     # income
+                     0,                                 # time unemployed, depends on number of children
+                     random.randint(0, 1)]              # married
+                    for i in range(0, len(data))]
 
-print(v_c)
-gender = 0
-children = 0
-income = 0
-time = 0
-married = 0
-approved = 0
-men_approved = 0
-women_approved = 0
+        for i in range(0, len(data)):
+            new_data[i][3] = random.uniform(0, self.__max_unemployed) + new_data[i][1] * (0.5 + 0.5*new_data[i][0])
 
-for i in range(0,n):
-    gender += v_c[i][0]
-    children += v_c[i][1]
-    income += v_c[i][2]
-    time += v_c[i][3]
-    married += v_c[i][4]
-    approved += v_c[i][5]
-    if v_c[i][5] == 1:
-        if v_c[i][0] == 1:
-            women_approved = women_approved+1
-        if v_c[i][0] == 0:
-            men_approved = men_approved+1
+        return new_data
 
-gender = gender/n
-children = children/n
-income = income/n
-time = time/n
-married = married/n
-approved = approved/n
-men_approved = men_approved/(n*p)
-women_approved = women_approved/(n*(1-p))
 
-print("average gender:           " + str(gender))
-print("average #children:        " + str(children))
-print("average income:           " + str(income))
-print("average time unemployed:  " + str(time))
-print("average #people married:  " + str(married))
-print("average #people approved: " + str(approved))
-print("average #men approved:    " + str(men_approved))
-print("average #women approved:  " + str(women_approved))
+    def classify(self, data):
+
+        for i in range(0, len(data)):
+            data[i].append(0)
+            approval = 0
+            if data[i][2] >= self.__approval_income:
+                approval = approval+1
+            if data[i][3] < self.__approval_absent_time:
+                approval = approval+1
+            if data[i][4] == self.__approval_married:
+                approval = approval+1
+
+            if approval >= self.__number_of_criteria:
+                data[i][5] = 1
+
+
+
+    def generate_credit_data(self, n, number_males, seed=13):
+        data = self.generate_other_features(self.generate_protected_feature_data(n, number_males,seed))
+        self.classify(data)
+        return data
+
+
+
+    #
+    # n = 10000
+    # p = 0.5
+    #
+    # v = generate_protected_feature_data(n, p)
+    # v_c = generate_other_features(v)
+    # classify(v_c)
+    #
+    # print(v_c)
+    # gender = 0
+    # children = 0
+    # income = 0
+    # time = 0
+    # married = 0
+    # approved = 0
+    # men_approved = 0
+    # women_approved = 0
+    #
+    # for i in range(0,n):
+    #     gender += v_c[i][0]
+    #     children += v_c[i][1]
+    #     income += v_c[i][2]
+    #     time += v_c[i][3]
+    #     married += v_c[i][4]
+    #     approved += v_c[i][5]
+    #     if v_c[i][5] == 1:
+    #         if v_c[i][0] == 1:
+    #             women_approved = women_approved+1
+    #         if v_c[i][0] == 0:
+    #             men_approved = men_approved+1
+    #
+    # gender = gender/n
+    # children = children/n
+    # income = income/n
+    # time = time/n
+    # married = married/n
+    # approved = approved/n
+    # men_approved = men_approved/(n*p)
+    # women_approved = women_approved/(n*(1-p))
+    #
+    # print("average gender:           " + str(gender))
+    # print("average #children:        " + str(children))
+    # print("average income:           " + str(income))
+    # print("average time unemployed:  " + str(time))
+    # print("average #people married:  " + str(married))
+    # print("average #people approved: " + str(approved))
+    # print("average #men approved:    " + str(men_approved))
+    # print("average #women approved:  " + str(women_approved))

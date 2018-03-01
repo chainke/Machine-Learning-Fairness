@@ -50,17 +50,16 @@ v = []  protected feature (gender, 1 = female)
 
 class CreditData:
 
-
     __max_children = 5
     __max_income = 50000
     __max_unemployed = 10
     __approval_income = 20000
     __approval_absent_time = 7
     __approval_married = 1
-    __number_of_criteria = 2
+    __number_of_criteria = 3
+    __bad_district = 3
 
-
-    def __init__(self, child, income,unemployed, ap_income, ap_unemployed, number_criteria):
+    def __init__(self, child, income, unemployed, ap_income, ap_unemployed, number_criteria):
         self.__max_children = child
         self.__max_unemployed= unemployed
         self.__max_income = income
@@ -81,14 +80,14 @@ class CreditData:
 
         return v
 
-
     def generate_other_features(self, data):
 
-        new_data = [[data[i],                           # gender
-                     random.randint(0, self.__max_children),   # children
-                     random.randint(0, self.__max_income),     # income
-                     0,                                 # time unemployed, depends on number of children
-                     random.randint(0, 1)]              # married
+        new_data = [[data[i],                                   # gender
+                     random.randint(0, self.__max_children),    # children
+                     random.randint(0, self.__max_income),      # income
+                     0,                                         # time unemployed, depends on number of children
+                     random.randint(0, 1),                      # married
+                     random.randint(0, 3)]                      # home district
                     for i in range(0, len(data))]
 
         for i in range(0, len(data)):
@@ -96,38 +95,39 @@ class CreditData:
 
         return new_data
 
-
     def classify(self, data):
 
+        y = list(np.zeros(len(data)))
+
         for i in range(0, len(data)):
-            data[i].append(0)
-            approval = 0
+            approval = 1
             if data[i][2] >= self.__approval_income:
                 approval = approval+1
             if data[i][3] < self.__approval_absent_time:
                 approval = approval+1
             if data[i][4] == self.__approval_married:
                 approval = approval+1
+            if data[i][5] == self.__bad_district:
+                approval = approval-1
 
             if approval >= self.__number_of_criteria:
-                data[i][5] = 1
+                y[i] = 1
 
-
+        return y
 
     def generate_credit_data(self, n, number_males, seed=13):
-        data = self.generate_other_features(self.generate_protected_feature_data(n, number_males,seed))
-        self.classify(data)
-        return data
+        X = self.generate_other_features(self.generate_protected_feature_data(n, number_males,seed))
+        y = self.classify(X)
+        return X, y
 
 
 
-    #
+
     # n = 10000
     # p = 0.5
     #
-    # v = generate_protected_feature_data(n, p)
-    # v_c = generate_other_features(v)
-    # classify(v_c)
+    # v_c = self.generate_credit_data(n, p)
+    # y = classify(v_c)
     #
     # print(v_c)
     # gender = 0
@@ -145,8 +145,8 @@ class CreditData:
     #     income += v_c[i][2]
     #     time += v_c[i][3]
     #     married += v_c[i][4]
-    #     approved += v_c[i][5]
-    #     if v_c[i][5] == 1:
+    #     approved += y[i]
+    #     if y[i] == 1:
     #         if v_c[i][0] == 1:
     #             women_approved = women_approved+1
     #         if v_c[i][0] == 0:

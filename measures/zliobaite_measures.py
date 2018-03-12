@@ -195,7 +195,7 @@ def normalized_difference(outcomes, protected):
 # conditional measures
 #######################
 
-def unexplained_difference(outcomes, protected):
+def unexplained_difference(outcomes, protected, stratum):
     """
         Measures the mean difference minus the difference that can be explained.
 
@@ -217,7 +217,30 @@ def unexplained_difference(outcomes, protected):
     assert (len(outcomes) > outcomes.count(0) + outcomes.count(1), "Outcomes must only contain the values 0 or 1")
     assert (len(protected) > protected.count(0) + protected.count(1), "Protected must only contain the values 0 or 1")
     assert (len(outcomes) == len(protected), "Outcomes and Protected have to be the same length")
+    assert (len(protected) == len(stratum), "Protected and Stratum have to be the same length")
 
     n = len(outcomes)
 
-    return 1
+    joined_stratum_protected = []
+    for i in range(n):
+        joined_stratum_protected.append((stratum[i], protected[i]))
+
+    joined_outcomes_protected_stratum = []
+    for i in range(n):
+        joined_outcomes_protected_stratum.append((outcomes[i], protected[i], stratum[i]))
+
+
+    de = 0
+    for i in range(n):
+        p_strato_neg = joined_stratum_protected.count(stratum[i], 0) / n
+        p_strato_pos = joined_stratum_protected.count(stratum[i], 1) / n
+
+        # p_star is the desired acceptance rate within strata i
+        p_star = ((joined_outcomes_protected_stratum.count(1, 0, stratum[i]) / n) + (joined_outcomes_protected_stratum.count(1, 1, stratum[i]) / n)) / 2
+
+        # the explained difference
+        de += p_star * (p_strato_neg - p_strato_pos)
+
+    du = mean_difference(outcomes, protected) - de
+
+    return du

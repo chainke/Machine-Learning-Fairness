@@ -57,7 +57,6 @@ class CreditData:
     __approval_absent_time = 7
     __approval_married = 1
     __number_of_criteria = 3
-    __bad_district = 3
 
     def __init__(self, child, income, unemployed, ap_income, ap_unemployed, number_criteria):
         self.__max_children = child
@@ -80,18 +79,19 @@ class CreditData:
 
         return v
 
-    def generate_other_features(self, data):
+    def generate_other_features(self, data, gap_between_groups):
 
         new_data = [[data[i],                                   # gender
                      random.randint(0, self.__max_children),    # children
                      random.randint(0, self.__max_income),      # income
-                     0,                                         # time unemployed, depends on number of children
-                     random.randint(0, 1),                      # married
-                     random.randint(0, 3)]                      # home district
+                     0,   # gets filled out further below       # time unemployed, depends on number of children
+                     random.randint(0, 1)]                      # married
                     for i in range(0, len(data))]
 
         for i in range(0, len(data)):
-            new_data[i][3] = random.uniform(0, self.__max_unemployed) + new_data[i][1] * (0.5 + 0.5*new_data[i][0])
+            new_data[i][3] = random.uniform(0, self.__max_unemployed) + \
+                             new_data[i][1] * (0.5 + 1*(math.exp(gap_between_groups)-1) *
+                                               (new_data[i][0] - 0.5 * (1-new_data[i][0])))  # TODO: improve further
 
         return new_data
 
@@ -100,72 +100,76 @@ class CreditData:
         y = list(np.zeros(len(data)))
 
         for i in range(0, len(data)):
-            approval = 1
+            approval = 0
             if data[i][2] >= self.__approval_income:
                 approval = approval+1
             if data[i][3] < self.__approval_absent_time:
                 approval = approval+1
             if data[i][4] == self.__approval_married:
                 approval = approval+1
-            if data[i][5] == self.__bad_district:
-                approval = approval-1
 
-            if approval >= self.__number_of_criteria:
+            if approval >= self.__number_of_criteria-1:
                 y[i] = 1
 
         return y
 
-    def generate_credit_data(self, n, number_males, seed=13):
-        X = self.generate_other_features(self.generate_protected_feature_data(n, number_males,seed))
+    def generate_credit_data(self, n, number_males, gap_between_groups, seed=13):
+        X = self.generate_other_features(self.generate_protected_feature_data(n, number_males,seed), gap_between_groups)
         y = self.classify(X)
-        return X, y
+        men, women = self.print_data(X, y, number_males, gap_between_groups)
+        return X, y, men, women
 
 
 
 
-    # n = 10000
-    # p = 0.5
-    #
-    # v_c = self.generate_credit_data(n, p)
-    # y = classify(v_c)
-    #
-    # print(v_c)
-    # gender = 0
-    # children = 0
-    # income = 0
-    # time = 0
-    # married = 0
-    # approved = 0
-    # men_approved = 0
-    # women_approved = 0
-    #
-    # for i in range(0,n):
-    #     gender += v_c[i][0]
-    #     children += v_c[i][1]
-    #     income += v_c[i][2]
-    #     time += v_c[i][3]
-    #     married += v_c[i][4]
-    #     approved += y[i]
-    #     if y[i] == 1:
-    #         if v_c[i][0] == 1:
-    #             women_approved = women_approved+1
-    #         if v_c[i][0] == 0:
-    #             men_approved = men_approved+1
-    #
-    # gender = gender/n
-    # children = children/n
-    # income = income/n
-    # time = time/n
-    # married = married/n
-    # approved = approved/n
-    # men_approved = men_approved/(n*p)
-    # women_approved = women_approved/(n*(1-p))
-    #
-    # print("average gender:           " + str(gender))
-    # print("average #children:        " + str(children))
-    # print("average income:           " + str(income))
-    # print("average time unemployed:  " + str(time))
-    # print("average #people married:  " + str(married))
-    # print("average #people approved: " + str(approved))
-    # print("average #men approved:    " + str(men_approved))
-    # print("average #women approved:  " + str(women_approved))
+    def print_data(self, v_c, y, p, gap):
+
+        n = len(v_c)
+
+        print(n)
+
+        print(v_c)
+        gender = 0
+        children = 0
+        income = 0
+        time = 0
+        married = 0
+        approved = 0
+        men_approved = 0
+        women_approved = 0
+
+        for i in range(0,n):
+            gender += v_c[i][0]
+            children += v_c[i][1]
+            income += v_c[i][2]
+            time += v_c[i][3]
+            married += v_c[i][4]
+            approved += y[i]
+            if y[i] == 1:
+                if v_c[i][0] == 1:
+                    women_approved = women_approved+1
+                if v_c[i][0] == 0:
+                    men_approved = men_approved+1
+
+        gender = gender/n
+        children = children/n
+        income = income/n
+        time = time/n
+        married = married/n
+        approved = approved/n
+        men_approved = men_approved/(n*p)
+        women_approved = women_approved/(n*(1-p))
+
+        # print("average gender:           " + str(gender))
+        # print("average #children:        " + str(children))
+        # print("average income:           " + str(income))
+        # print("average time unemployed:  " + str(time))
+        # print("average #people married:  " + str(married))
+        # print("average #people approved: " + str(approved))
+        print("average #men approved:    " + str(men_approved))
+        print("average #women approved:  " + str(women_approved))
+        print("gap in between:           " + str(men_approved-women_approved))
+        print("gap put in:               " + str(gap))
+        print("difference:               " + str(gap-men_approved+women_approved))
+
+        return men_approved, women_approved

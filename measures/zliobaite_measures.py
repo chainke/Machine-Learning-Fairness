@@ -244,3 +244,109 @@ def unexplained_difference(outcomes, protected, stratum):
     du = mean_difference(outcomes, protected) - de
 
     return du
+
+
+#######################
+# Situation measures
+#######################
+
+def situation_testing(outcomes, protected, individuals, t, k):
+    """
+        Measures which fraction of individuals in the protected group are considered to be discriminated against.
+        Positive and negative discrimination is handled separately.
+        Compares each individual to the opposite group and see if the decision would be different. With this, it
+        signals direct discrimination for each individual.
+
+        Parameters
+        ----------
+        outcomes: list of int
+                  Either 0 or 1
+
+        protected: list of int
+                   Either 0 or 1
+                   all individuals of the protected group
+
+        individuals: list of feature-vectors?
+                     contains all individuals
+
+        t: int
+           threshold of maximum tolerable difference
+
+        k: int
+           nearest neighbours
+
+        Returns
+        -------
+        r : int
+            either 0 or 1 ??
+            is discriminated or not
+
+    """
+    
+    # estimate D(s¹)
+    d_pos = []
+    d_pos_joined = []
+    for i in range(protected):
+        if(protected[i] == 1):
+            d_pos.append(protected[i])
+            d_pos_joined.append(outcome[i], protected[i])
+
+
+    # absolute value of individuals in D(s¹)
+    abs_d_pos = len(d_pos)
+
+    # estimate D(s⁰)
+    d_neg = []
+    d_neg_joined = []
+    for i in range(protected):
+        if(protected[i] == 0):
+            d_neg.append(protected[i])
+            d_neg_joined.append(outcome[i], protected[i])
+
+    # sum over all individuals u in D(s¹)
+    i_res = 0 # the result of the summed indicator function results
+    diff_d_pos = 0 # the result of the summed labels for the neighbours of u with s¹
+    diff_d_neg = 0 # the result of the summed labels for the neighbours of u with s⁰
+    for u in d_pos:
+        # estimate diff_d_pos
+        # TODO: find outcome of the k nearest neighbours of u in d_pos        
+        
+
+        # estimate diff_d_neg
+        # TODO: find outcome of k nearest neighbours of u in d_neg
+        
+
+        diff_d_pos = diff_d_pos / k
+        diff_d_neg = diff_d_neg / k
+
+        # sum up results of indicator function
+        i_res += indicator_situation_testing((diff_d_neg - diff_d_pos) >= t)
+
+    return i_res / abs_d_pos
+
+
+
+def indicator_situation_testing(b):
+    """
+        Indicator function that takes 1 if true, 0 otherwise.
+
+
+        Parameters
+        ----------
+        b: true or false
+
+
+        Returns
+        -------
+        i : int
+            1 if true, 0 otherwise
+
+    """
+
+    if(b):
+        return 1
+    else:
+        return 0
+
+
+

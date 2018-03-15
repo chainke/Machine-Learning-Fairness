@@ -232,11 +232,14 @@ def unexplained_difference(outcomes, protected, stratum):
 
     de = 0
     for i in range(n):
-        p_strato_neg = joined_stratum_protected.count(stratum[i], 0) / n
-        p_strato_pos = joined_stratum_protected.count(stratum[i], 1) / n
+        count_strato_neg = joined_stratum_protected.count(stratum[i], 0)
+        count_strato_pos = joined_stratum_protected.count(stratum[i], 1)
+
+        p_strato_neg = count_strato_neg / n
+        p_strato_pos = count_strato_pos / n
 
         # p_star is the desired acceptance rate within strata i
-        p_star = ((joined_outcomes_protected_stratum.count(1, 0, stratum[i]) / n) + (joined_outcomes_protected_stratum.count(1, 1, stratum[i]) / n)) / 2
+        p_star = ((joined_outcomes_protected_stratum.count(1, 0, stratum[i]) / count_strato_neg) + (joined_outcomes_protected_stratum.count(1, 1, stratum[i]) / p_strato_pos)) / 2
 
         # the explained difference
         de += p_star * (p_strato_neg - p_strato_pos)

@@ -166,11 +166,12 @@ if __name__ == '__main__':
     import pandas as pd
     import sys
 
-    if not len(sys.argv) == 3:
-        raise RuntimeError('Invalid number of arguments')
+    # if not len(sys.argv) == 3:
+    #     raise RuntimeError('Invalid number of arguments')
 
     # Cost constraint
-    cost_constraint = sys.argv[2]
+    cost_constraint = 'weighted'
+    # cost_constraint = sys.argv[2]
     if cost_constraint not in ['fnr', 'fpr', 'weighted']:
         raise RuntimeError('cost_constraint (arg #2) should be one of fnr, fpr, weighted')
 
@@ -185,8 +186,9 @@ if __name__ == '__main__':
         fp_rate = 1
 
     # Load the validation set scores from csvs
-    data_filename = sys.argv[1]
-    test_and_val_data = pd.read_csv(sys.argv[1])
+    data_filename = 'data/data.csv'
+    # data_filename = sys.argv[1]
+    test_and_val_data = pd.read_csv(data_filename)
 
     # Randomly split the data into two sets - one for computing the fairness constants
     order = np.random.permutation(len(test_and_val_data))

@@ -3,7 +3,7 @@ import Data_Generata
 import math
 
 
-from sklearn.metrics.cluster import adjusted_mutual_info_score
+from sklearn.metrics.cluster import normalized_mutual_info_score
 
 
 #=======================================================
@@ -24,14 +24,16 @@ def compute_mi_weights(feature, data):
         temp_feature = []
         for j in range(0, len(data)):
             temp_feature.append(data[j][i])
-        w.append(adjusted_mutual_info_score(feature, temp_feature))
+        w.append(normalized_mutual_info_score(feature, temp_feature))
     return w
 
 
 def compute_vector_weights(feature,labels,data):
     feature_mi = compute_mi_weights(feature,data)
     label_mi = compute_mi_weights(labels,data)
-
+    relative_weights = []
+    for i in range(0, len(feature_mi)):
+        relative_weights.append(label_mi[i]*(1-feature_mi[i]))
     # idea: if the mutual information of a feature concerning the protected group is rather high, it should not be
     # treated with the same weight as unrelated features, since it might yield to discriminating results.
     # But if a feature also highly contributes to the label of the class, it should still have a major impact to not
@@ -53,15 +55,16 @@ def compute_vector_weights(feature,labels,data):
     print("time unemployed              " + str(label_mi[3]))
     print("married              " + str(label_mi[4]))
 
+    return relative_weights
 
 
-n = 100
+n = 100000
 p = 0.5
 k = 10
 
 weights = 'uniform'
 
-X, y = Data_Generata.CreditData(5,50000,10, 20000, 7,2).generate_credit_data(n,p)
+X, y = Data_Generata.CreditData(5,50000,10, 20000, 7,2).generate_credit_data(n,p,0.5)
 
 feature = []
 for j in range(0, len(X)):

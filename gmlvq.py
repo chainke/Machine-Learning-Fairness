@@ -28,7 +28,7 @@ intended_gap = 0.5
 #
 #     intended_gap = 0.01 * i
 #
-X, y, men_approved, women_approved = Data_Generata.CreditData(5, 50000, 10, 20000, 7, 2).generate_credit_data(n,p,intended_gap)
+#     X, y, men_approved, women_approved = Data_Generata.CreditData(5, 50000, 10, 20000, 7, 2).generate_credit_data(n,p,intended_gap)
 #     actual_gap = men_approved - women_approved
 #     gaps.append(actual_gap)
 #     men.append(men_approved)
@@ -42,6 +42,7 @@ X, y, men_approved, women_approved = Data_Generata.CreditData(5, 50000, 10, 2000
 # pylab.legend(loc='upper left')
 # pylab.show()
 
+X, y, men_approved, women_approved = Data_Generata.CreditData(5, 50000, 10, 20000, 7, 2).generate_credit_data_debug(n,p,intended_gap)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1/3, random_state=42)
 X_train_true, X_valid, y_train_true, y_valid = train_test_split(X_train, y_train, test_size=1/2, random_state=42)
 

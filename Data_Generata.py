@@ -114,13 +114,15 @@ class CreditData:
         return y
 
     def generate_credit_data(self, n, number_males, gap_between_groups, seed=13):
-        X = self.generate_other_features(self.generate_protected_feature_data(n, number_males,seed), gap_between_groups)
+        X = self.generate_other_features(self.generate_protected_feature_data(n, number_males, seed),
+                                         gap_between_groups)
         y = self.classify(X)
+        return X, y
+
+    def generate_credit_data_debug(self, n, number_males, gap_between_groups, seed=13):
+        X, y = self.generate_credit_data(n, number_males, gap_between_groups, seed)
         men, women = self.print_data(X, y, number_males, gap_between_groups)
         return X, y, men, women
-
-
-
 
     def print_data(self, v_c, y, p, gap):
 

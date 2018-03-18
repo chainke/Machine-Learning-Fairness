@@ -1,3 +1,5 @@
+from sklearn.neighbors import KNeighborsClassifier
+
 #######################
 # absolute measures
 #######################
@@ -287,37 +289,48 @@ def situation_testing(outcomes, protected, individuals, t, k):
     """
     
     # estimate D(s¹)
-    d_pos = []
-    d_pos_joined = []
+    d_protected_pos = [] # contains all s¹
+    d_outcome_pos = [] # contains all y|s¹
+    d_individuals_pos = [] # contains all u|s¹
     for i in range(protected):
         if(protected[i] == 1):
-            d_pos.append(protected[i])
-            d_pos_joined.append(outcome[i], protected[i])
+            d_protected_pos.append(protected[i])
+            d_outcome_pos.append(outcome[i])
+            d_individuals_pos.append(individuals[i])
 
 
     # absolute value of individuals in D(s¹)
-    abs_d_pos = len(d_pos)
+    abs_d_pos = len(d_protected_pos)
 
     # estimate D(s⁰)
-    d_neg = []
-    d_neg_joined = []
+    d_outcome_neg = [] # contains all y|s⁰
+    d_individuals_neg = [] # contains all u|s⁰
     for i in range(protected):
         if(protected[i] == 0):
-            d_neg.append(protected[i])
-            d_neg_joined.append(outcome[i], protected[i])
+            d_outcome_neg.append(outcome[i])
+            d_individuals_neg.append(individuals[i])
+
+    # setup knn
+    knn = KNeighborsClassifier(n_neighbors = k)
+    knn.fit(individuals, outcomes)
+    neighbor_indices = [] # contains the indices of all found neighbors
 
     # sum over all individuals u in D(s¹)
     i_res = 0 # the result of the summed indicator function results
     diff_d_pos = 0 # the result of the summed labels for the neighbours of u with s¹
     diff_d_neg = 0 # the result of the summed labels for the neighbours of u with s⁰
-    for u in d_pos:
-        # estimate diff_d_pos
-        # TODO: find outcome of the k nearest neighbours of u in d_pos        
-        
+    for u in d_protected_pos:
+        # estimate diff_d_pos:
+        # find y of the k nearest neighbours of u in d_individuals_pos     
+        neighbor_indices = knn.kneighbors(d_individuals_pos, k, false)
+        for i in neighbor_indices:
+            diff_d_pos += d_outcome_pos[i]
 
-        # estimate diff_d_neg
-        # TODO: find outcome of k nearest neighbours of u in d_neg
-        
+        # estimate diff_d_neg:
+        # find y of the k nearest neighbours of u in d_individuals_neg
+        neighbor_indices = knn.kneighbors(d_individuals_neg, k, false)
+        for i in neighbor_indices:
+            diff_d_neg += d_outcome_neg[i]
 
         diff_d_pos = diff_d_pos / k
         diff_d_neg = diff_d_neg / k

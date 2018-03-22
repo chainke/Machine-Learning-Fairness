@@ -97,15 +97,28 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         distwrong = d_wrong.min(1)
         pidxwrong = d_wrong.argmin(1)
 
-        d_correct = dist
+        d_correct = dist.copy()
         d_correct[np.invert(label_equals_prototype)] = np.inf
         distcorrect = d_correct.min(1)
         pidxcorrect = d_correct.argmin(1)
 
+    #--------------------------------------------------------------
+    #   Fairness part
+
+        # Todo: has to be adaptable later. just hardcoded right now
+        badc_idx = 0
+        goodc_idx = 1
+
+        dist_bad = []
+        dist_good = []
+        for i in range (0, len(dist)):
+            dist_bad.append(dist[i][badc_idx])
+            dist_good.append(dist[i][goodc_idx])
+
+    #--------------------------------------------------------------
         distcorrectpluswrong = distcorrect + distwrong
 
         g = np.zeros(prototypes.shape)
-
         distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
 
         for i in range(nb_prototypes):

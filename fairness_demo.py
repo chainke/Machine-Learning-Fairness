@@ -76,6 +76,7 @@ X[log10, :] += np.array([0, 1])
 log11 = np.logical_and(C, Y)
 X[log11, :] += np.array([1, 2])
 
+
 # Train a GLVQ model
 model = GlvqModel()
 model.fit(X, Y)
@@ -115,3 +116,18 @@ print('fraction of whites who would pay their money back but get a bad score: {}
 
 def getData():
 	return X, Y_predicted
+
+def getProtected():
+	protected = []
+
+	# X[log00,:] and X[log01,:] contain all non-white people and therefore are the protected group
+	for i in range(len(X[log00, :]) + len(X[log01, :])):
+		protected.append(1)
+
+	for i in range(len(X[log10, :]) + len(X[log11, :])):
+		protected.append(0)
+
+	return protected
+
+def getTrainedModel():
+	return model

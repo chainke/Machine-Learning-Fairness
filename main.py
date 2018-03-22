@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import measures.zliobaite_measures as measure
+import measures.functions as measure
 import fairness_demo
 import random_data_glvq
 
@@ -10,6 +10,7 @@ print(__doc__)
 # use this to bring data generation and fairness measurement together as shown below:
 # - import data generation (and if necessary classifier, or classify in your data generation class)
 # - use the measures from zliobaite_measures to estimate your fairness
+# should work if you run this script from repo root folder
 
 
 
@@ -36,21 +37,8 @@ for i in range(len(unfairY_predicted)):
 	else:
 		unfairY_predicted_processed.append(0)
 
-# fairness measures random for comparison
-fairness = measure.elift(unfairY_predicted_processed, protected)
-print('elift ratio: ', fairness)
-
-fairness = measure.odds_ratio(unfairY_predicted_processed, protected)
-print('odds ratio: ', fairness)
-
-fairness = measure.impact_ratio(unfairY_predicted_processed, protected)
-print('impact ratio: ', fairness)
-
-fairness = measure.mean_difference(unfairY_predicted_processed, protected)
-print('mean difference: ', fairness)
-
-fairness = measure.normalized_difference(unfairY_predicted_processed, protected)
-print('normalized difference: ', fairness)
+# fairness measures from unfair data
+measure.printAbsoluteMeasures(unfairY_predicted_processed, protected)
 
 
 
@@ -73,20 +61,4 @@ glvq = random_data_glvq.getTrainedModel()
 print('classification accuracy:', glvq.score(toy_data, pred))
 
 # fairness measures random for comparison
-fairness = measure.elift(pred.tolist(), toy_protected)
-print('elift ratio: ', fairness)
-
-fairness = measure.odds_ratio(pred.tolist(), toy_protected)
-print('odds ratio: ', fairness)
-
-fairness = measure.impact_ratio(pred.tolist(), toy_protected)
-print('impact ratio: ', fairness)
-
-fairness = measure.mean_difference(pred.tolist(), toy_protected)
-print('mean difference: ', fairness)
-
-fairness = measure.normalized_difference(pred.tolist(), toy_protected)
-print('normalized difference: ', fairness)
-
-
-
+measure.printAbsoluteMeasures(pred.tolist(), toy_protected)

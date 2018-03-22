@@ -111,7 +111,8 @@ def impact_ratio(outcomes, protected):
     p_pos_0 = joined.count((1, 0)) / n
     p_pos_1 = joined.count((1, 1)) / n
 
-    return 0 if p_pos_0 == 0 else p_pos_1 / p_pos_0
+    #return 0 if p_pos_0 == 0 else p_pos_1 / p_pos_0
+    return p_pos_1 / p_pos_0
 
 
 def mean_difference(outcomes, protected):

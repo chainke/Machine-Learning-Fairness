@@ -76,6 +76,9 @@ X[log10, :] += np.array([0, 1])
 log11 = np.logical_and(C, Y)
 X[log11, :] += np.array([1, 2])
 
+#print(C)
+#print(Y)
+
 # Train a GLVQ model
 model = GlvqModel()
 model.fit(X, Y)
@@ -92,7 +95,7 @@ ax.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tan
 ax.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
 ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2), linewidths=2, s=150, marker='D')
 ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-plt.show()
+#plt.show()
 
 # Check some fairness measures
 Y_predicted = model.predict(X)
@@ -115,3 +118,23 @@ print('fraction of non-whites who would not pay their money back but get a good 
 print('fraction of non-whites who would pay their money back but get a bad score: {}'.format(np.mean(np.not_equal(Y_predicted[log01], Y[log01]))))
 print('fraction of whites who would not pay their money back but get a good score: {}'.format(np.mean(np.not_equal(Y_predicted[log10], Y[log10]))))
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(np.mean(np.not_equal(Y_predicted[log11], Y[log11]))))
+
+
+def getData():
+	return X, Y, Y_predicted
+
+def getProtected():
+	protected = []
+
+	for i in range(len(C)):
+		if(C[i]):
+			protected.append(0)
+		else:
+			protected.append(1)
+
+	#print(protected)
+
+	return protected
+
+def getTrainedModel():
+	return model

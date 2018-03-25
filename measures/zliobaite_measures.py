@@ -37,7 +37,8 @@ def elift(outcomes, protected):
     p_pos_0 = joined.count((1, 0)) / n
     p_pos = outcomes.count(1) / n
 
-    return p_pos_0 / p_pos
+    return 0 if p_pos == 0 else p_pos_0 / p_pos
+    #return p_pos_0 / p_pos
 
 
 def odds_ratio(outcomes, protected):
@@ -75,8 +76,8 @@ def odds_ratio(outcomes, protected):
     p_neg_0 = joined.count((0, 0)) / n
     p_neg_1 = joined.count((0, 1)) / n
 
-    return (p_pos_0 * p_neg_1) / (p_pos_1 * p_neg_0)
-
+    #return (p_pos_0 * p_neg_1) / (p_pos_1 * p_neg_0)
+    return 0 if (p_pos_1 * p_neg_0) == 0 else (p_pos_0 * p_neg_1) / (p_pos_1 * p_neg_0)
 
 def impact_ratio(outcomes, protected):
     """
@@ -111,8 +112,8 @@ def impact_ratio(outcomes, protected):
     p_pos_0 = joined.count((1, 0)) / n
     p_pos_1 = joined.count((1, 1)) / n
 
-    #return 0 if p_pos_0 == 0 else p_pos_1 / p_pos_0
-    return p_pos_1 / p_pos_0
+    return 0 if p_pos_0 == 0 else p_pos_1 / p_pos_0
+    #return p_pos_1 / p_pos_0
 
 
 def mean_difference(outcomes, protected):
@@ -191,7 +192,8 @@ def normalized_difference(outcomes, protected):
 
     dmax = min((p_pos / p_s0),(p_neg / p_s1))
 
-    return (p_pos_0 - p_pos_1) / dmax
+    return 0 if dmax == 0 else (p_pos_0 - p_pos_1) / dmax
+    #return (p_pos_0 - p_pos_1) / dmax
 
 
 #######################

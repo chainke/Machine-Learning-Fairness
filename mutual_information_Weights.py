@@ -2,7 +2,7 @@ import numpy as np
 import Data_Generata
 import math
 
-
+from GLVQ.grlvq import GrlvqModel
 from sklearn.metrics.cluster import normalized_mutual_info_score
 
 
@@ -40,34 +40,86 @@ def compute_vector_weights(feature,labels,data):
     # worsen the results.
 
     print("Mutual information protected group -- features")
-    print("---------------------------------------------------------")
-    print("protected feature:              " + str(feature_mi[0]))
-    print("number of children              " + str(feature_mi[1]))
-    print("annual income              " + str(feature_mi[2]))
-    print("time unemployed              " + str(feature_mi[3]))
-    print("married              " + str(feature_mi[4]))
-    print("=========================================================")
+    for i in range(len(relative_weights)):
+        print(str(feature_mi[i]))
+    #print("---------------------------------------------------------")
+    #print("protected feature:              " + str(feature_mi[0]))
+    #print("number of children              " + str(feature_mi[1]))
+    #print("annual income              " + str(feature_mi[2]))
+    #print("time unemployed              " + str(feature_mi[3]))
+    #print("married              " + str(feature_mi[4]))
+    #print("=========================================================")
     print("Mutual information classification -- features")
-    print("---------------------------------------------------------")
-    print("protected feature              " + str(label_mi[0]))
-    print("number of children              " + str(label_mi[1]))
-    print("annual income              " + str(label_mi[2]))
-    print("time unemployed              " + str(label_mi[3]))
-    print("married              " + str(label_mi[4]))
+    for i in range(len(relative_weights)):
+        print(str(label_mi[i]))
+    #print("---------------------------------------------------------")
+    #print("protected feature              " + str(label_mi[0]))
+    #print("number of children              " + str(label_mi[1]))
+    #print("annual income              " + str(label_mi[2]))
+    #print("time unemployed              " + str(label_mi[3]))
+    #print("married              " + str(label_mi[4]))
+
+    print ("weights: " + str(relative_weights));
 
     return relative_weights
 
 
-n = 100000
-p = 0.5
-k = 10
 
-weights = 'uniform'
+def run_mi_data_generata():
+    n = 1000#00
+    p = 0.5
+    k = 10
 
-X, y = Data_Generata.CreditData(5,50000,10, 20000, 7,2).generate_credit_data(n,p,0.5)
+    weights = 'uniform'
 
-feature = []
-for j in range(0, len(X)):
-    feature.append(X[j][0])
+    X, y = Data_Generata.CreditData(5,50000,10, 20000, 7,2).generate_credit_data(n,p,0.5)
 
-compute_vector_weights(feature,y,X)
+    print(X)
+
+    feature = []
+    for j in range(0, len(X)):
+        feature.append(X[j][0])
+
+    print(feature)
+
+    compute_vector_weights(feature,y,X)
+
+
+def grlvq_fit(X, y, feature):
+    """
+        Fits classifier for given data with given label. 
+        Uses the grlvq model and the weights computed via mutial information
+
+        Parameters
+        ----------
+        X: list of data as float vectors
+
+        y: list of labels as int
+           Either 0 or 1
+
+        feature: list of protected feature as int
+            Either 0 or 1
+
+        Returns
+        -------
+        weights : list of float
+            computed weights for features
+
+        predY : list of
+            predicted outcomes
+
+    """
+
+    print(X)
+    print(feature)
+
+    weights = compute_vector_weights(feature,y,X)
+
+    # start classification
+    grlvq = GrlvqModel(initial_relevances = weights)
+    #grlvq = GrlvqModel()
+    grlvq.fit(X, y)
+    pred = grlvq.predict(X)
+
+    print('classification accuracy:', grlvq.score(X, pred))
+    return weights, pred

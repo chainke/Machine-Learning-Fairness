@@ -115,12 +115,12 @@ print('fraction of whites who would pay their money back but get a good score: {
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(np.mean(np.not_equal(Y_predicted[log11], Y[log11]))))
 
 def getData():
-	return X, Y_predicted
+	return X, Y, Y_predicted
 
 def getProtected():
 	protected = []
 
-	# X[log00,:] and X[log01,:] contain all non-white people and therefore are the protected group
+	# X[log00,:] and X[log01,:] contain all non-white people and therefore the protected group
 	for i in range(len(X[log00, :]) + len(X[log01, :])):
 		protected.append(1)
 

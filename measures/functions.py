@@ -1,5 +1,8 @@
 import measures.zliobaite_measures as measures
 
+# use this script to implement all functions needed for the measures
+
+
 def printAbsoluteMeasures(outcomes, protected):
 	fairness = measures.elift(outcomes, protected)
 	print('elift ratio: ', fairness)

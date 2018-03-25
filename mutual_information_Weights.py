@@ -74,13 +74,13 @@ def run_mi_data_generata():
 
     X, y = Data_Generata.CreditData(5,50000,10, 20000, 7,2).generate_credit_data(n,p,0.5)
 
-    print(X)
+    #print(X)
 
     feature = []
     for j in range(0, len(X)):
         feature.append(X[j][0])
 
-    print(feature)
+    #print(feature)
 
     compute_vector_weights(feature,y,X)
 
@@ -110,8 +110,8 @@ def grlvq_fit(X, y, feature):
 
     """
 
-    print(X)
-    print(feature)
+    #print(X)
+    #print(feature)
 
     weights = compute_vector_weights(feature,y,X)
 

@@ -81,3 +81,4 @@ ax.set_ylabel("Income")
 ax.scatter(X_urban[:, 0], X_urban[:, 1], c=tango_color('butter', 0), edgecolors=tango_color('butter', 2), marker='o')
 ax.scatter(X_suburb[:, 0], X_suburb[:, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='o')
 plt.show()
+

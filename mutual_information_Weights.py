@@ -80,7 +80,7 @@ def run_mi_data_generata():
     for j in range(0, len(X)):
         feature.append(X[j][0])
 
-    #print(feature)
+    print(feature)
 
     compute_vector_weights(feature,y,X)
 

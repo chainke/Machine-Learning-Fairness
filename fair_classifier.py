@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import Data_Generata
 
 from fair_glvq import GlvqModel
-from Platt_Scaling_LVQ.plot_2d import to_tango_colors, tango_color
+from GLVQ.plot_2d import to_tango_colors, tango_color
 
 print(__doc__)
 
@@ -13,14 +14,22 @@ print('GLVQ:')
 # TODO: use unfair data
 toy_data = np.append(
     np.random.multivariate_normal([0, 0], np.eye(2) / 2, size=nb_ppc),
-    np.random.multivariate_normal([5, 0], np.eye(2) / 2, size=nb_ppc), axis=0)
+    np.random.multivariate_normal([5, 0], np.eye(2) / 2, size=nb_ppc),axis=0)
 toy_label = np.append(np.zeros(nb_ppc), np.ones(nb_ppc), axis=0)
+
+n = 1000  # 00
+p = 0.5
+k = 10
+
+weights = 'uniform'
+
+X, y = Data_Generata.CreditData(5, 50000, 10, 20000, 7, 2).generate_credit_data(n, p, 0.5)
 
 # model fitting
 # TODO: add platt scaling
 glvq = GlvqModel()
-glvq.fit(toy_data, toy_label)
-pred = glvq.predict(toy_data)
+glvq.fit(X, y, 0)
+# pred = glvq.predict(X)
 
 # plotting
 plt.scatter(toy_data[:, 0], toy_data[:, 1], c=to_tango_colors(toy_label), alpha=0.5)

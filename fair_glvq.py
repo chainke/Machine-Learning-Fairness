@@ -41,6 +41,9 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         Prototypes to start with. If not given initialization near the class
         means. Class label must be placed as last entry of each prototype.
 
+    alpha : percentage of fairness relevance.
+        alpha = 0 means normal glvq.
+
     max_iter : int, optional (default=2500)
         The maximum number of iterations.
 
@@ -75,7 +78,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
     GrlvqModel, GmlvqModel, LgmlvqModel
     """
 
-    def __init__(self, prototypes_per_class=1, initial_prototypes=None,
+    def __init__(self,alpha=0, prototypes_per_class=1, initial_prototypes=None,
                  max_iter=2500, gtol=1e-5,
                  display=False, random_state=None):
         self.random_state = random_state
@@ -84,9 +87,14 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         self.display = display
         self.max_iter = max_iter
         self.gtol = gtol
+        self.alpha = alpha
 
     def _optgrad(self, variables, training_data, label_equals_prototype,
-                 random_state):
+                 random_state, protected_labels):
+    # --------------------------------------------------------------
+        nr_pc = sum(protected_labels)
+        nr_nc = len(protected_labels)-nr_pc
+    # --------------------------------------------------------------
         n_data, n_dim = training_data.shape
         nb_prototypes = self.c_w_.size
         prototypes = variables.reshape(nb_prototypes, n_dim)
@@ -140,6 +148,8 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         prototypes = variables.reshape(nb_prototypes, n_dim)
 
         dist = _squared_euclidean(training_data, prototypes)
+
+        print(dist)
         d_wrong = dist.copy()
         d_wrong[label_equals_prototype] = np.inf
         distwrong = d_wrong.min(1)
@@ -218,7 +228,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
                     "prototype labels={}\n".format(self.classes_, self.c_w_))
         return train_set, train_lab, random_state
 
-    def _optimize(self, x, y, random_state):
+    def _optimize(self, x, y, protected_labels, random_state):
         label_equals_prototype = y[np.newaxis].T == self.c_w_
         res = minimize(
             fun=lambda vs: self._optfun(
@@ -227,14 +237,27 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             jac=lambda vs: self._optgrad(
                 variables=vs, training_data=x,
                 label_equals_prototype=label_equals_prototype,
-                random_state=random_state),
+                random_state=random_state, protected_labels = protected_labels),
             method='l-bfgs-b', x0=self.w_,
             options={'disp': self.display, 'gtol': self.gtol,
                      'maxiter': self.max_iter})
         self.w_ = res.x.reshape(self.w_.shape)
         self.n_iter_ = res.nit
 
-    def fit(self, x, y):
+    def split_x(self, x, dim_protected):
+
+        protected = []
+        new_x = []
+
+        for i in range(0, len(x)):
+            protected.append(x[i][dim_protected])
+            new_x.append(
+                x[i][:dim_protected] + x[i][dim_protected+1:]
+            )
+
+        return new_x, protected
+
+    def fit(self, x, y, dim_protected=0):
         """Fit the GLVQ model to the given training data and parameters using
         l-bfgs-b.
 
@@ -251,11 +274,14 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         --------
         self
         """
-        x, y, random_state = self._validate_train_parms(x, y)
+
+        new_x, protected = self.split_x(x, dim_protected)
+        new_x, y, random_state = self._validate_train_parms(new_x, y)
         if len(np.unique(y)) == 1:
             raise ValueError("fitting " + type(
                 self).__name__ + " with only one class is not possible")
-        self._optimize(x, y, random_state)
+
+        self._optimize(new_x, y, protected, random_state)
         return self
 
     def _compute_distance(self, x, w=None):
@@ -288,3 +314,24 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
                              "expected=%d" % (self.w_.shape[1], x.shape[1]))
         dist = self._compute_distance(x)
         return (self.c_w_[dist.argmin(1)])
+
+    def sgd(self, x):
+        return 1/(1+np.exp(-x))
+
+    def dsgd(self,x):
+        return np.exp(-x)/((np.exp(-x)+1) ** 2)
+
+    def fairness_difference(self,protected_labels, nr_cp, dist):
+        nr_cn = len(protected_labels)-nr_cp
+        sgd_positive_class = 0
+        sgd_negative_class = 0
+        for i in range(0, len(dist)):
+            d0 = dist[i][0]
+            d1 = dist[i][1]
+            mu = self.sgd((d0-d1)/(d0+d1))
+            sgd_positive_class += protected_labels[i] * mu
+            sgd_negative_class += (1-protected_labels[i]) * mu
+
+        fairnessdiff = (sgd_positive_class/nr_cp - sgd_negative_class/nr_cn) ** 2
+        return fairnessdiff
+

@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from glvq import GlvqModel
-from plot_2d import to_tango_colors, tango_color
+from Platt_Scaling_LVQ.glvq import GlvqModel
+from Platt_Scaling_LVQ.plot_2d import to_tango_colors, tango_color
 
 print(__doc__)
 

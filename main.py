@@ -4,6 +4,9 @@ import measures.functions as measure
 import data.demo_benjamin as unfair_benjamin
 import data.random_data_glvq as random_data
 import mutual_information_Weights as mi
+import Data_Generata
+import sys
+from GLVQ.glvq import GlvqModel
 
 print(__doc__)
 
@@ -14,50 +17,85 @@ print(__doc__)
 # should work if you run this script from repo root folder
 
 
+#################################################
+#
+# unfair data from benjamin
+#
+#################################################
+
+def data_benjamin():
+
+	print('\n\n#################################\n#pipeline with unfair data\n#################################\n')
+	print("GLVQ:\n")
+
+	# data from benjamin
+	unfairX, unfairY, unfairY_predicted = unfair_benjamin.getData()
+
+	protected = unfair_benjamin.getProtected()
+
+	model = unfair_benjamin.getTrainedModel()
+
+	print('classification accuracy:', model.score(unfairX, unfairY_predicted))
+
+	# process data, since unfairY_predicted contains boolean
+	unfairY_processed = []
+	unfairY_predicted_processed = []
+	for i in range(len(unfairY_predicted)):
+		if(unfairY_predicted[i]):
+			unfairY_predicted_processed.append(1)
+		else:
+			unfairY_predicted_processed.append(0)
+
+		if(unfairY[i]):
+			unfairY_processed.append(1)
+		else:
+			unfairY_processed.append(0)
+
+	# fairness measures from unfair data
+	measure.printAbsoluteMeasures(unfairY_predicted_processed, protected)
+
+
+	# grlvq with mutual information
+
+	print("\n\nGRLVQ:\n")
+
+	weights, predicted = mi.grlvq_fit(unfairX, unfairY_processed, protected)
+
+	measure.printAbsoluteMeasures(predicted.tolist(), protected)
 
 #################################################
 #
-# unfair data from benjamin with
+# unfair data from credit example
 #
 #################################################
 
-print('\n\n#################################\n#pipeline with unfair data\n#################################\n')
-print("GLVQ:\n")
+def data_credit():
+	print('\n\n#################################\n#pipeline with credit data\n#################################\n')
 
-unfairX, unfairY, unfairY_predicted = unfair_benjamin.getData()
-protected = unfair_benjamin.getProtected()
+	n = 1000#00
+	p = 0.9
+	X, y = Data_Generata.CreditData(5,50000,10, 20000, 7,2).generate_credit_data(n,p,0.5)
+	
+	protected = []
+	for i in range(0, len(X)):
+		protected.append(X[i][0])
 
-model = unfair_benjamin.getTrainedModel()
+	print('GLVQ:\n')
 
-print('classification accuracy:', model.score(unfairX, unfairY_predicted))
+	glvq = GlvqModel()
+	glvq.fit(X,y)
+	predicted_glvq = glvq.predict(X)
 
-# process data, since unfairY_predicted contains boolean
-unfairY_processed = []
-unfairY_predicted_processed = []
-for i in range(len(unfairY_predicted)):
-	if(unfairY_predicted[i]):
-		unfairY_predicted_processed.append(1)
-	else:
-		unfairY_predicted_processed.append(0)
+	print('classification accuracy:', glvq.score(X, predicted_glvq))
+	measure.printAbsoluteMeasures(predicted_glvq.tolist(), protected)
 
-	if(unfairY[i]):
-		unfairY_processed.append(1)
-	else:
-		unfairY_processed.append(0)
+	
+	print('\n\nGLRVQ:\n')
 
-# fairness measures from unfair data
-measure.printAbsoluteMeasures(unfairY_predicted_processed, protected)
+	weights, predicted = mi.grlvq_fit(X, y, protected)
 
+	measure.printAbsoluteMeasures(predicted.tolist(), protected)
 
-# grlvq with mutual information
-
-print("\n\nGRLVQ:\n")
-
-weights, predicted = mi.grlvq_fit(unfairX, unfairY_processed, protected)
-
-measure.printAbsoluteMeasures(predicted.tolist(), protected)
-
-#mi.run_mi_data_generata()
 
 
 #################################################
@@ -66,17 +104,30 @@ measure.printAbsoluteMeasures(predicted.tolist(), protected)
 #
 #################################################
 
-nb_ppc = 100
-#print('GLVQ:')
+def data_random():
+	nb_ppc = 100
+	
+	print('\n\n#################################\n#pipeline with random data\n#################################\n')
+	print('GLVQ:')
+
+	toy_data, pred = random_data.getData()
+	toy_protected = random_data.getProtected()
+	glvq = random_data.getTrainedModel()
+
+	print('classification accuracy:', glvq.score(toy_data, pred))
+
+	# fairness measures random for comparison
+	measure.printAbsoluteMeasures(pred.tolist(), toy_protected)
 
 
-print('\n\n#################################\n#pipeline with random data\n#################################\n')
+if(len(sys.argv) != 2):
+	print("please pass the argument 'benjamin' for data from benjamin or 'credit' for credit example")
+	sys.exit()
 
-toy_data, pred = random_data.getData()
-toy_protected = random_data.getProtected()
-glvq = random_data.getTrainedModel()
+if (sys.argv[1] == "benjamin"): # use data from benjamin
+	data_benjamin()
+elif (sys.argv[1] == "credit"): # use credit example
+	data_credit()
 
-print('classification accuracy:', glvq.score(toy_data, pred))
-
-# fairness measures random for comparison
-measure.printAbsoluteMeasures(pred.tolist(), toy_protected)
+data_random()
+		

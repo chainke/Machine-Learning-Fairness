@@ -38,7 +38,7 @@ weights = 'uniform'
 
 # model fitting
 # TODO: add platt scaling
-glvq = GlvqModel(0.5)
+glvq = GlvqModel(1)
 # glvq.fit(new_x, y, protected_labels)
 glvq.fit(toy_data, toy_label, toy_protected_labels)
 pred = glvq.predict(toy_data)

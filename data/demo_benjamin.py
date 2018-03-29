@@ -7,10 +7,11 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from glvq.plot_2d import tango_color
-from glvq.plot_2d import to_tango_colors
-from glvq.plot_2d import plot2d
-from glvq.glvq import GlvqModel
+from GLVQ.plot_2d import tango_color
+from GLVQ.plot_2d import to_tango_colors
+from GLVQ.plot_2d import plot2d
+from GLVQ.glvq import GlvqModel
+from fair_glvq import GlvqModel as FairGlvqModel
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
 # has the purpose to predict how likely it is that customers will pay back their debt.
@@ -81,21 +82,9 @@ X[log11, :] += np.array([1, 2])
 
 # Train a GLVQ model
 model = GlvqModel()
+
 model.fit(X, Y)
 
-# Plot the data and the prototypes as well
-fig = plt.figure()
-fig.canvas.set_window_title("LVQ with continuous distance to city center")
-ax  = fig.add_subplot(111)
-ax.set_xlabel("Distance from City Center")
-ax.set_ylabel("Income")
-ax.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
-ax.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='o')
-ax.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
-ax.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
-ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2), linewidths=2, s=150, marker='D')
-ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-#plt.show()
 
 # Check some fairness measures
 Y_predicted = model.predict(X)
@@ -119,7 +108,6 @@ print('fraction of non-whites who would pay their money back but get a bad score
 print('fraction of whites who would not pay their money back but get a good score: {}'.format(np.mean(np.not_equal(Y_predicted[log10], Y[log10]))))
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(np.mean(np.not_equal(Y_predicted[log11], Y[log11]))))
 
-
 def getData():
 	return X, Y, Y_predicted
 
@@ -138,3 +126,56 @@ def getProtected():
 
 def getTrainedModel():
 	return model
+
+protected_label = getProtected()
+fair_model = FairGlvqModel(100)
+fair_model.fit(X,Y, protected_label)
+
+
+# Check some fairness measures
+fair_Y_predicted = fair_model.predict(X)
+# Compute the mean difference, that is, the difference between the average credit score for
+# whites and non-whites
+# First, we need the credit score for that, which is _not_ the classification, but the function
+# sigma( (d[0] - d[1]) / (d[0] + d[1]) ) where d[0] is the distance of the data point to the
+# prototype for people who will pay their money back and d[1] is the distance of the data point
+# to the prototype for people who will _not_ pay their money back.
+fair_D     = fair_model._compute_distance(X)
+ff     = np.divide(fair_D[:, 0] - D[:, 1], fair_D[:, 0] + fair_D[:, 1])
+ff     = np.divide(np.ones(m), 1 + np.exp(-ff))
+
+print('mean difference: {}'.format(np.mean(ff[C]) - np.mean(ff[np.logical_not(C)])))
+
+# Compute predictive equality measurements, that is, the fraction of people in a protected group
+# who are erroneously classified
+print('\npredictive equality measurements:')
+print('fraction of non-whites who would not pay their money back but get a good score: {}'.format(np.mean(np.not_equal(fair_Y_predicted[log00], Y[log00]))))
+print('fraction of non-whites who would pay their money back but get a bad score: {}'.format(np.mean(np.not_equal(fair_Y_predicted[log01], Y[log01]))))
+print('fraction of whites who would not pay their money back but get a good score: {}'.format(np.mean(np.not_equal(fair_Y_predicted[log10], Y[log10]))))
+print('fraction of whites who would pay their money back but get a bad score: {}'.format(np.mean(np.not_equal(fair_Y_predicted[log11], Y[log11]))))
+
+
+
+
+# ax1  = fig.add_subplot(111)
+f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+# Plot the data and the prototypes as well
+f.canvas.set_window_title("LVQ with continuous distance to city center")
+ax1.set_xlabel("Distance from City Center")
+ax1.set_ylabel("Income")
+ax1.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+ax1.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='o')
+ax1.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
+ax1.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
+ax1.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2), linewidths=2, s=150, marker='D')
+ax1.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
+
+ax2.set_xlabel("Distance from City Center")
+ax2.set_ylabel("Income")
+ax2.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+ax2.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='o')
+ax2.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
+ax2.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
+ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2), linewidths=2, s=150, marker='D')
+ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
+plt.show()

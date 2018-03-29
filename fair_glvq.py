@@ -110,20 +110,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         distcorrect = d_correct.min(1)
         pidxcorrect = d_correct.argmin(1)
 
-        # --------------------------------------------------------------
-        #   Fairness part
-
-        # Todo: has to be adaptable later. just hardcoded right now
-        badc_idx = 0
-        goodc_idx = 1
-
-        dist_bad = []
-        dist_good = []
-        for i in range(0, len(dist)):
-            dist_bad.append(dist[i][badc_idx])
-            dist_good.append(dist[i][goodc_idx])
-
-            # --------------------------------------------------------------
         distcorrectpluswrong = distcorrect + distwrong
 
         g = np.zeros(prototypes.shape)
@@ -137,7 +123,8 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             dwd = distwrong[idxc] * distcorrectpluswrong[idxc]
             g[i] = dcd.dot(training_data[idxw]) - dwd.dot(
                 training_data[idxc]) + (dwd.sum(0) -
-                                        dcd.sum(0)) * prototypes[i]+2*self.alpha*fair_diff*fair_dw[i]
+                                        dcd.sum(0)) * prototypes[i]\
+                   +2*self.alpha*fair_diff*fair_dw[i]
         g[:nb_prototypes] = 1 / n_data * g[:nb_prototypes]
         g = g * (1 + 0.0001 * random_state.rand(*g.shape) - 0.5)
         return g.ravel()
@@ -332,6 +319,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             sgd_negative_class += (1 - protected_labels[i]) * mu
 
         fairnessdiff = (sgd_positive_class / nr_cp - sgd_negative_class / nr_cn) ** 2
+        print("fairnessdiff:        " + str(fairnessdiff))
         return fairnessdiff
 
     def dfairness_difference(self, protected_labels, nr_cp, dist, data):
@@ -351,6 +339,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
         dw0 = self.partial_dfair(nr_cp, dist_cp, data_cp, 0) - self.partial_dfair(nr_cn, dist_cn, data_cn, 0)
         dw1 = self.partial_dfair(nr_cp, dist_cp, data_cp, 1) - self.partial_dfair(nr_cn, dist_cn, data_cn, 1)
+        print("gradients:        " + str([dw0, dw1]))
         return [dw0, dw1]
 
     def partial_dfair(self, nr_data, filter_dist, filter_data, pclass):
@@ -363,5 +352,5 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             drel = filter_dist[i][1 - pclass]
             mu = (d0 - d1) / (d0 + d1)
             sum += self.dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (filter_data[i] - self.w_[pclass])
-
+        print("partial_dfair:        " + str(vz * sum / nr_data))
         return vz * sum / nr_data

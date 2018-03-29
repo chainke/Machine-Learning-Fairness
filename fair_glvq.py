@@ -78,7 +78,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
     GrlvqModel, GmlvqModel, LgmlvqModel
     """
 
-    def __init__(self,alpha=0, prototypes_per_class=1, initial_prototypes=None,
+    def __init__(self, alpha=0, prototypes_per_class=1, initial_prototypes=None,
                  max_iter=2500, gtol=1e-5,
                  display=False, random_state=None):
         self.random_state = random_state
@@ -91,10 +91,10 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
     def _optgrad(self, variables, training_data, label_equals_prototype,
                  random_state, protected_labels):
-    # --------------------------------------------------------------
-        nr_pc = sum(protected_labels)
-        nr_nc = len(protected_labels)-nr_pc
-    # --------------------------------------------------------------
+        # --------------------------------------------------------------
+        nr_cp = sum(protected_labels)
+        nr_nc = len(protected_labels) - nr_cp
+        # --------------------------------------------------------------
         n_data, n_dim = training_data.shape
         nb_prototypes = self.c_w_.size
         prototypes = variables.reshape(nb_prototypes, n_dim)
@@ -110,8 +110,8 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         distcorrect = d_correct.min(1)
         pidxcorrect = d_correct.argmin(1)
 
-    #--------------------------------------------------------------
-    #   Fairness part
+        # --------------------------------------------------------------
+        #   Fairness part
 
         # Todo: has to be adaptable later. just hardcoded right now
         badc_idx = 0
@@ -119,25 +119,25 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
         dist_bad = []
         dist_good = []
-        for i in range (0, len(dist)):
+        for i in range(0, len(dist)):
             dist_bad.append(dist[i][badc_idx])
             dist_good.append(dist[i][goodc_idx])
 
-    #--------------------------------------------------------------
+            # --------------------------------------------------------------
         distcorrectpluswrong = distcorrect + distwrong
 
         g = np.zeros(prototypes.shape)
         distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
-
+        fair_diff = self.fairness_difference(protected_labels,nr_cp,dist)
+        fair_dw = self.dfairness_difference(protected_labels,nr_cp,dist, training_data)
         for i in range(nb_prototypes):
             idxc = i == pidxcorrect
             idxw = i == pidxwrong
-
             dcd = distcorrect[idxw] * distcorrectpluswrong[idxw]
             dwd = distwrong[idxc] * distcorrectpluswrong[idxc]
             g[i] = dcd.dot(training_data[idxw]) - dwd.dot(
                 training_data[idxc]) + (dwd.sum(0) -
-                                        dcd.sum(0)) * prototypes[i]
+                                        dcd.sum(0)) * prototypes[i]+2*self.alpha*fair_diff*fair_dw[i]
         g[:nb_prototypes] = 1 / n_data * g[:nb_prototypes]
         g = g * (1 + 0.0001 * random_state.rand(*g.shape) - 0.5)
         return g.ravel()
@@ -149,7 +149,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
         dist = _squared_euclidean(training_data, prototypes)
 
-        print(dist)
         d_wrong = dist.copy()
         d_wrong[label_equals_prototype] = np.inf
         distwrong = d_wrong.min(1)
@@ -237,7 +236,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             jac=lambda vs: self._optgrad(
                 variables=vs, training_data=x,
                 label_equals_prototype=label_equals_prototype,
-                random_state=random_state, protected_labels = protected_labels),
+                random_state=random_state, protected_labels=protected_labels),
             method='l-bfgs-b', x0=self.w_,
             options={'disp': self.display, 'gtol': self.gtol,
                      'maxiter': self.max_iter})
@@ -252,12 +251,12 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         for i in range(0, len(x)):
             protected.append(x[i][dim_protected])
             new_x.append(
-                x[i][:dim_protected] + x[i][dim_protected+1:]
+                x[i][:dim_protected] + x[i][dim_protected + 1:]
             )
 
         return new_x, protected
 
-    def fit(self, x, y, dim_protected=0):
+    def fit(self, x, y, protected_labels):
         """Fit the GLVQ model to the given training data and parameters using
         l-bfgs-b.
 
@@ -274,14 +273,14 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         --------
         self
         """
-
-        new_x, protected = self.split_x(x, dim_protected)
-        new_x, y, random_state = self._validate_train_parms(new_x, y)
+        x, y, random_state = self._validate_train_parms(x, y)
         if len(np.unique(y)) == 1:
             raise ValueError("fitting " + type(
                 self).__name__ + " with only one class is not possible")
 
-        self._optimize(new_x, y, protected, random_state)
+        self._optimize(x, y, protected_labels, random_state)
+        print(self.w_)
+        print(self.c_w_)
         return self
 
     def _compute_distance(self, x, w=None):
@@ -316,22 +315,53 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         return (self.c_w_[dist.argmin(1)])
 
     def sgd(self, x):
-        return 1/(1+np.exp(-x))
+        return 1 / (1 + np.exp(-x))
 
-    def dsgd(self,x):
-        return np.exp(-x)/((np.exp(-x)+1) ** 2)
+    def dsgd(self, x):
+        return np.exp(-x) / ((np.exp(-x) + 1) ** 2)
 
-    def fairness_difference(self,protected_labels, nr_cp, dist):
-        nr_cn = len(protected_labels)-nr_cp
+    def fairness_difference(self, protected_labels, nr_cp, dist):
+        nr_cn = len(protected_labels) - nr_cp
         sgd_positive_class = 0
         sgd_negative_class = 0
-        for i in range(0, len(dist)):
+        for i in range(0, len(protected_labels)):
             d0 = dist[i][0]
             d1 = dist[i][1]
-            mu = self.sgd((d0-d1)/(d0+d1))
+            mu = self.sgd((d0 - d1) / (d0 + d1))
             sgd_positive_class += protected_labels[i] * mu
-            sgd_negative_class += (1-protected_labels[i]) * mu
+            sgd_negative_class += (1 - protected_labels[i]) * mu
 
-        fairnessdiff = (sgd_positive_class/nr_cp - sgd_negative_class/nr_cn) ** 2
+        fairnessdiff = (sgd_positive_class / nr_cp - sgd_negative_class / nr_cn) ** 2
         return fairnessdiff
 
+    def dfairness_difference(self, protected_labels, nr_cp, dist, data):
+        nr_cn = len(data) - nr_cp
+        dist_cn = []
+        dist_cp = []
+        data_cn = []
+        data_cp = []
+
+        for i in range(0, len(data)):
+            if protected_labels[i] == 0:
+                dist_cn.append(dist[i])
+                data_cn.append(data[i])
+            else:
+                dist_cp.append(dist[i])
+                data_cp.append(data[i])
+
+        dw0 = self.partial_dfair(nr_cp, dist_cp, data_cp, 0) - self.partial_dfair(nr_cn, dist_cn, data_cn, 0)
+        dw1 = self.partial_dfair(nr_cp, dist_cp, data_cp, 1) - self.partial_dfair(nr_cn, dist_cn, data_cn, 1)
+        return [dw0, dw1]
+
+    def partial_dfair(self, nr_data, filter_dist, filter_data, pclass):
+        sum = np.zeros(len(filter_data[0]))
+        vz = pclass * 2 - 1
+        for i in range(0, len(filter_data)):
+            # TODO: Hardcoded "negative" class, should be adjustable later.
+            d0 = filter_dist[i][0]
+            d1 = filter_dist[i][1]
+            drel = filter_dist[i][1 - pclass]
+            mu = (d0 - d1) / (d0 + d1)
+            sum += self.dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (filter_data[i] - self.w_[pclass])
+
+        return vz * sum / nr_data

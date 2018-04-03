@@ -93,7 +93,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
                  random_state, protected_labels):
         # --------------------------------------------------------------
         nr_cp = sum(protected_labels)
-        nr_nc = len(protected_labels) - nr_cp
         # --------------------------------------------------------------
         n_data, n_dim = training_data.shape
         nb_prototypes = self.c_w_.size
@@ -124,14 +123,15 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             g[i] = dcd.dot(training_data[idxw]) - dwd.dot(
                 training_data[idxc]) + (dwd.sum(0) -
                                         dcd.sum(0)) * prototypes[i]\
-                   +2*self.alpha*fair_diff*fair_dw[i]
+                   + 2*self.alpha*fair_diff*fair_dw[i]
         g[:nb_prototypes] = 1 / n_data * g[:nb_prototypes]
         g = g * (1 + 0.0001 * random_state.rand(*g.shape) - 0.5)
         return g.ravel()
 
-    def _optfun(self, variables, training_data, label_equals_prototype):
+    def _optfun(self, variables, training_data, label_equals_prototype, protected_labels):
         n_data, n_dim = training_data.shape
         nb_prototypes = self.c_w_.size
+        nr_cp = sum(protected_labels)
         prototypes = variables.reshape(nb_prototypes, n_dim)
 
         dist = _squared_euclidean(training_data, prototypes)
@@ -146,9 +146,10 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
         distcorrectpluswrong = distcorrect + distwrong
         distcorectminuswrong = distcorrect - distwrong
-        mu = distcorectminuswrong / distcorrectpluswrong
-
-        return mu.sum(0)
+        mu = self.sgd(distcorectminuswrong / distcorrectpluswrong)
+        error_normal = mu.sum(0)/len(training_data)
+        error_fairness = self.alpha*self.fairness_difference(protected_labels,nr_cp,dist)
+        return error_normal+error_fairness
 
     def _validate_train_parms(self, train_set, train_lab):
         random_state = validation.check_random_state(self.random_state)
@@ -219,7 +220,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         res = minimize(
             fun=lambda vs: self._optfun(
                 variables=vs, training_data=x,
-                label_equals_prototype=label_equals_prototype),
+                label_equals_prototype=label_equals_prototype, protected_labels=protected_labels),
             jac=lambda vs: self._optgrad(
                 variables=vs, training_data=x,
                 label_equals_prototype=label_equals_prototype,
@@ -266,8 +267,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
                 self).__name__ + " with only one class is not possible")
 
         self._optimize(x, y, protected_labels, random_state)
-        print(self.w_)
-        print(self.c_w_)
         return self
 
     def _compute_distance(self, x, w=None):
@@ -319,7 +318,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             sgd_negative_class += (1 - protected_labels[i]) * mu
 
         fairnessdiff = (sgd_positive_class / nr_cp - sgd_negative_class / nr_cn) ** 2
-        print("fairnessdiff:        " + str(fairnessdiff))
         return fairnessdiff
 
     def dfairness_difference(self, protected_labels, nr_cp, dist, data):
@@ -339,7 +337,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
         dw0 = self.partial_dfair(nr_cp, dist_cp, data_cp, 0) - self.partial_dfair(nr_cn, dist_cn, data_cn, 0)
         dw1 = self.partial_dfair(nr_cp, dist_cp, data_cp, 1) - self.partial_dfair(nr_cn, dist_cn, data_cn, 1)
-        print("gradients:        " + str([dw0, dw1]))
         return [dw0, dw1]
 
     def partial_dfair(self, nr_data, filter_dist, filter_data, pclass):
@@ -352,5 +349,4 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             drel = filter_dist[i][1 - pclass]
             mu = (d0 - d1) / (d0 + d1)
             sum += self.dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (filter_data[i] - self.w_[pclass])
-        print("partial_dfair:        " + str(vz * sum / nr_data))
         return vz * sum / nr_data

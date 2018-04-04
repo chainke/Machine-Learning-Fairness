@@ -147,7 +147,7 @@ ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color('scarletred', 0), e
 
 ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2), linewidths=2, s=150, marker='D')
 ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-plt.show()
+#plt.show()
 
 
 # # Plot the data and the prototypes as well

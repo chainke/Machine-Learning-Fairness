@@ -72,7 +72,7 @@ def data_benjamin():
 def data_credit():
 	print('\n\n#################################\n#pipeline with credit data\n#################################\n')
 
-	n = 1000#00
+	n = 10000#0
 	p = 0.9
 	X, y = Data_Generata.CreditData(5,50000,10, 20000, 7,2).generate_credit_data(n,p,0.5)
 	
@@ -92,9 +92,9 @@ def data_credit():
 	
 	print('\n\nGLRVQ:\n')
 
-	weights, predicted = mi.grlvq_fit(X, y, protected)
+	weights, predicted_glrvq = mi.grlvq_fit(X, y, protected)
 
-	measure.printAbsoluteMeasures(predicted.tolist(), protected)
+	measure.printAbsoluteMeasures(predicted_glrvq.tolist(), protected)
 
 
 

@@ -204,4 +204,4 @@ ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1
             linewidths=2, s=150, marker='D')
 ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
             edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-plt.show()
+#plt.show()

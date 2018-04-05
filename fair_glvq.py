@@ -130,10 +130,10 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         pidxcorrect = d_correct.argmin(1)
 
         distcorrectpluswrong = distcorrect + distwrong
-
+        nr_protected = sum(protected_labels,0)
         g = np.zeros(prototypes.shape)
         distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
-        fair_diff = self.mean_difference(protected_labels, dist)
+        fair_diff = mean_difference(protected_labels,nr_protected, dist)
         fair_dw = self.dmean_difference(protected_labels, dist, training_data)
         for i in range(nb_prototypes):
             idxc = i == pidxcorrect
@@ -166,9 +166,9 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
         distcorrectpluswrong = distcorrect + distwrong
         distcorectminuswrong = distcorrect - distwrong
-        mu = self.sgd(distcorectminuswrong / distcorrectpluswrong)
+        mu = sgd(distcorectminuswrong / distcorrectpluswrong)
         error_normal = mu.sum(0) / len(training_data)
-        error_fairness = self.alpha * self.mean_difference(protected_labels, nr_cp, dist)
+        error_fairness = self.alpha * mean_difference(protected_labels, nr_cp, dist)
         return error_normal + error_fairness
 
     def _validate_train_parms(self, train_set, train_lab):
@@ -319,27 +319,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
                              "expected=%d" % (self.w_.shape[1], x.shape[1]))
         dist = self._compute_distance(x)
         return (self.c_w_[dist.argmin(1)])
-
-    def sgd(self, x):
-        return 1 / (1 + np.exp(-x))
-
-    def dsgd(self, x):
-        return np.exp(-x) / ((np.exp(-x) + 1) ** 2)
-
-    def mean_difference(self, protected_labels, dist):
-        nr_protected_group = sum(protected_labels)
-        nr_non_protected_group = len(protected_labels) - nr_protected_group
-        sgd_positive_class = 0
-        sgd_negative_class = 0
-        for i in range(0, len(protected_labels)):
-            d0 = dist[i][0]
-            d1 = dist[i][1]
-            mu = self.sgd((d0 - d1) / (d0 + d1))
-            sgd_positive_class += protected_labels[i] * mu
-            sgd_negative_class += (1 - protected_labels[i]) * mu
-
-        fairnessdiff = (sgd_positive_class / nr_protected_group - sgd_negative_class / nr_non_protected_group) ** 2
-        return fairnessdiff
 
     def dmean_difference(self, protected_labels, dist, data):
         nr_protected_group = sum(protected_labels)

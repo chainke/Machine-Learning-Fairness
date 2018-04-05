@@ -9,7 +9,7 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
-from fair_glvq import GlvqModel
+from fair_glvq import mean_difference
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils import validation
 from sklearn.utils.multiclass import unique_labels
@@ -24,6 +24,24 @@ def _squared_euclidean(a, b=None):
         d = np.sum(a ** 2, 1)[np.newaxis].T + np.sum(b ** 2, 1) - 2 * a.dot(
             b.T)
     return np.maximum(d, 0)
+
+
+def normalized_mean_difference(protected_labels, nr_protected, dist):
+    m = len(protected_labels)
+    sgd_protected_group = 0
+    sgd_unprotected_group = 0
+    for i in range(0, len(protected_labels)):
+        d0 = dist[i][0]
+        d1 = dist[i][1]
+        mu = sgd((d0 - d1) / (d0 + d1))
+        sgd_protected_group += protected_labels[i] * mu
+        sgd_unprotected_group += (1 - protected_labels[i]) * mu
+
+    sumphi = sgd_protected_group+sgd_unprotected_group
+    minimum = min((sumphi/m)/(1-nr_protected/m), (1-sumphi/m)/(nr_protected/m))
+
+    norm_mean_difference = (sgd_unprotected_group/(m-nr_protected)-sgd_protected_group/nr_protected)/minimum
+    return norm_mean_difference
 
 
 def sgd(x):
@@ -285,23 +303,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
 
 # protected lables 1 = in protected class
-
-    def normalized_mean_difference(self, protected_labels, nr_protected, dist):
-        m = len(protected_labels)
-        sgd_protected_group = 0
-        sgd_unprotected_group = 0
-        for i in range(0, len(protected_labels)):
-            d0 = dist[i][0]
-            d1 = dist[i][1]
-            mu = sgd((d0 - d1) / (d0 + d1))
-            sgd_protected_group += protected_labels[i] * mu
-            sgd_unprotected_group += (1 - protected_labels[i]) * mu
-
-        sum = sgd_protected_group+sgd_unprotected_group
-        minimum = min((sum/m)/(1-nr_protected/m), (1-sum/m)/(nr_protected/m))
-
-        normalized_mean_difference = (sgd_unprotected_group/(m-nr_protected)-sgd_protected_group/nr_protected)/minimum
-        return normalized_mean_difference
 
     def d_norm_fairness_difference(self, protected_labels, nr_cp, dist, data):
         nr_cn = len(data) - nr_cp

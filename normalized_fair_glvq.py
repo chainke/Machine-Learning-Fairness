@@ -14,6 +14,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils import validation
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_is_fitted
+import operator
 
 
 def _squared_euclidean(a, b=None):
@@ -28,20 +29,28 @@ def _squared_euclidean(a, b=None):
 
 def normalized_mean_difference(protected_labels, nr_protected, dist):
     m = len(protected_labels)
-    sgd_protected_group = 0
-    sgd_unprotected_group = 0
+    sgd_unprotected, sgd_protected = fairness_phi(protected_labels,dist)
+    min_index, min_value = minimum_norm(sgd_protected+sgd_unprotected,m , nr_protected)
+    norm_mean_difference = (sgd_unprotected/(m-nr_protected)-sgd_protected/nr_protected)/min_value
+    return norm_mean_difference
+
+
+def minimum_norm(sum_phi, m, nr_protected):
+    values = [(sum_phi / m) / (1 - nr_protected / m), (1 - sum_phi / m) / (nr_protected / m)]
+    min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
+    return min_index, min_value
+
+
+def fairness_phi(protected_labels, dist):
+    phi_protected_group = 0
+    phi_unprotected_group = 0
     for i in range(0, len(protected_labels)):
         d0 = dist[i][0]
         d1 = dist[i][1]
         mu = sgd((d0 - d1) / (d0 + d1))
-        sgd_protected_group += protected_labels[i] * mu
-        sgd_unprotected_group += (1 - protected_labels[i]) * mu
-
-    sumphi = sgd_protected_group+sgd_unprotected_group
-    minimum = min((sumphi/m)/(1-nr_protected/m), (1-sumphi/m)/(nr_protected/m))
-
-    norm_mean_difference = (sgd_unprotected_group/(m-nr_protected)-sgd_protected_group/nr_protected)/minimum
-    return norm_mean_difference
+        phi_protected_group += protected_labels[i] * mu
+        phi_unprotected_group += (1 - protected_labels[i]) * mu
+    return phi_unprotected_group, phi_protected_group
 
 
 def sgd(x):
@@ -50,6 +59,7 @@ def sgd(x):
 
 def dsgd(x):
     return np.exp(-x) / ((np.exp(-x) + 1) ** 2)
+
 
 class GlvqModel(BaseEstimator, ClassifierMixin):
     """Generalized Learning Vector Quantization
@@ -304,7 +314,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
 # protected lables 1 = in protected class
 
-    def d_norm_fairness_difference(self, protected_labels, nr_cp, dist, data):
+    def gradient_norm_mean_difference(self, protected_labels, nr_cp, dist, data):
         nr_cn = len(data) - nr_cp
         dist_cn = []
         dist_cp = []
@@ -322,4 +332,29 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         dw0 = self.partial_dfair(nr_cp, dist_cp, data_cp, 0) - self.partial_dfair(nr_cn, dist_cn, data_cn, 0)
         dw1 = self.partial_dfair(nr_cp, dist_cp, data_cp, 1) - self.partial_dfair(nr_cn, dist_cn, data_cn, 1)
         return [dw0, dw1]
+
+    def dwi_mean_difference(self, nr_data, dist, data, wi):
+        sum = np.zeros(len(data[0]))
+        vz = wi * 2 - 1
+        for i in range(0, len(data)):
+            # TODO: Hardcoded "negative" class, should be adjustable later.
+            d0 = dist[i][0]
+            d1 = dist[i][1]
+            drel = dist[i][1 - wi]
+            mu = (d0 - d1) / (d0 + d1)
+            sum += dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (data[i] - self.w_[wi])
+        return vz * sum / nr_data
+
+    # We normalize through min(A,B) and therefore need the partial derivatives of A, B, and 1/2(A+B).
+    # The following methods compute the derivatives.
+
+    def dwi_minimuma(self, dist, data, nr_protected, wi):
+        m = len(data)
+        dwi_min_a = self.dwi_mean_difference(1, dist, data, wi)/(m-nr_protected)
+        return dwi_min_a
+
+    def dwi_minimumb(self, dist, data, nr_protected, wi):
+        dwi_min_b = -self.dwi_mean_difference(1, dist, data, wi)/(nr_protected)
+        return dwi_min_b
+
 

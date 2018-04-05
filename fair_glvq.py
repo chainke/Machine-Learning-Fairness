@@ -134,7 +134,7 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         g = np.zeros(prototypes.shape)
         distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
         fair_diff = mean_difference(protected_labels,nr_protected, dist)
-        fair_dw = self.dmean_difference(protected_labels, dist, training_data)
+        fair_dw = self.gradient_mean_difference(protected_labels, dist, training_data)
         for i in range(nb_prototypes):
             idxc = i == pidxcorrect
             idxw = i == pidxwrong
@@ -320,36 +320,36 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         dist = self._compute_distance(x)
         return (self.c_w_[dist.argmin(1)])
 
-    def dmean_difference(self, protected_labels, dist, data):
-        nr_protected_group = sum(protected_labels)
-        nr_non_protected_group = len(data) - nr_protected_group
-        dist_c_prot = []
-        data_c_prot = []
-        dist_c_n_prot = []
-        data_c_n_prot = []
+    def gradient_mean_difference(self, protected_labels, dist, data):
+        nr_protected = sum(protected_labels)
+        nr_unprotected = len(data) - nr_protected
+        dist_protected = []
+        data_protected = []
+        dist_unprotected = []
+        data_unprotected = []
 
         for i in range(0, len(data)):
             if protected_labels[i] == 0:
-                dist_c_n_prot.append(dist[i])
-                data_c_n_prot.append(data[i])
+                dist_unprotected.append(dist[i])
+                data_unprotected.append(data[i])
             else:
-                dist_c_prot.append(dist[i])
-                data_c_prot.append(data[i])
+                dist_protected.append(dist[i])
+                data_protected.append(data[i])
 
-        dw0 = self.partial_dfair(nr_protected_group, dist_c_prot, data_c_prot, 0) - self.partial_dfair(
-            nr_non_protected_group, dist_c_n_prot, data_c_n_prot, 0)
-        dw1 = self.partial_dfair(nr_protected_group, dist_c_prot, data_c_prot, 1) - self.partial_dfair(
-            nr_non_protected_group, dist_c_n_prot, data_c_n_prot, 1)
+        dw0 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 0) - self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 0)
+        dw1 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 1) - self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 1)
         return [dw0, dw1]
 
-    def partial_dfair(self, nr_data, filter_dist, filter_data, pclass):
-        sum = np.zeros(len(filter_data[0]))
-        vz = pclass * 2 - 1
-        for i in range(0, len(filter_data)):
+    def dwi_mean_difference(self, nr_data, dist, data, wi):
+        sum = np.zeros(len(data[0]))
+        vz = wi * 2 - 1
+        for i in range(0, len(data)):
             # TODO: Hardcoded "negative" class, should be adjustable later.
-            d0 = filter_dist[i][0]
-            d1 = filter_dist[i][1]
-            drel = filter_dist[i][1 - pclass]
+            d0 = dist[i][0]
+            d1 = dist[i][1]
+            drel = dist[i][1 - wi]
             mu = (d0 - d1) / (d0 + d1)
-            sum += self.dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (filter_data[i] - self.w_[pclass])
+            sum += dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (data[i] - self.w_[wi])
         return vz * sum / nr_data

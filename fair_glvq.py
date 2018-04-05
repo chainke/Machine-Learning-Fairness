@@ -114,8 +114,6 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
     def _optgrad(self, variables, training_data, label_equals_prototype,
                  random_state, protected_labels):
         # --------------------------------------------------------------
-        nr_cp = sum(protected_labels)
-        # --------------------------------------------------------------
         n_data, n_dim = training_data.shape
         nb_prototypes = self.c_w_.size
         prototypes = variables.reshape(nb_prototypes, n_dim)
@@ -135,8 +133,8 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
 
         g = np.zeros(prototypes.shape)
         distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
-        fair_diff = self.mean_difference(protected_labels, nr_cp, dist)
-        fair_dw = self.dmean_difference(protected_labels, nr_cp, dist, training_data)
+        fair_diff = self.mean_difference(protected_labels, dist)
+        fair_dw = self.dmean_difference(protected_labels, dist, training_data)
         for i in range(nb_prototypes):
             idxc = i == pidxcorrect
             idxw = i == pidxwrong
@@ -144,8 +142,8 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             dwd = distwrong[idxc] * distcorrectpluswrong[idxc]
             g[i] = dcd.dot(training_data[idxw]) - dwd.dot(
                 training_data[idxc]) + (dwd.sum(0) -
-                                        dcd.sum(0)) * prototypes[i]\
-                   + 2*self.alpha*fair_diff*fair_dw[i]
+                                        dcd.sum(0)) * prototypes[i] \
+                   + 2 * self.alpha * fair_diff * fair_dw[i]
         g[:nb_prototypes] = 1 / n_data * g[:nb_prototypes]
         g = g * (1 + 0.0001 * random_state.rand(*g.shape) - 0.5)
         return g.ravel()
@@ -169,9 +167,9 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         distcorrectpluswrong = distcorrect + distwrong
         distcorectminuswrong = distcorrect - distwrong
         mu = self.sgd(distcorectminuswrong / distcorrectpluswrong)
-        error_normal = mu.sum(0)/len(training_data)
-        error_fairness = self.alpha*self.mean_difference(protected_labels, nr_cp, dist)
-        return error_normal+error_fairness
+        error_normal = mu.sum(0) / len(training_data)
+        error_fairness = self.alpha * self.mean_difference(protected_labels, nr_cp, dist)
+        return error_normal + error_fairness
 
     def _validate_train_parms(self, train_set, train_lab):
         random_state = validation.check_random_state(self.random_state)
@@ -328,8 +326,9 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
     def dsgd(self, x):
         return np.exp(-x) / ((np.exp(-x) + 1) ** 2)
 
-    def mean_difference(self, protected_labels, nr_cp, dist):
-        nr_cn = len(protected_labels) - nr_cp
+    def mean_difference(self, protected_labels, dist):
+        nr_protected_group = sum(protected_labels)
+        nr_non_protected_group = len(protected_labels) - nr_protected_group
         sgd_positive_class = 0
         sgd_negative_class = 0
         for i in range(0, len(protected_labels)):
@@ -339,26 +338,29 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             sgd_positive_class += protected_labels[i] * mu
             sgd_negative_class += (1 - protected_labels[i]) * mu
 
-        fairnessdiff = (sgd_positive_class / nr_cp - sgd_negative_class / nr_cn) ** 2
+        fairnessdiff = (sgd_positive_class / nr_protected_group - sgd_negative_class / nr_non_protected_group) ** 2
         return fairnessdiff
 
-    def dmean_difference(self, protected_labels, nr_cp, dist, data):
-        nr_cn = len(data) - nr_cp
-        dist_cn = []
-        dist_cp = []
-        data_cn = []
-        data_cp = []
+    def dmean_difference(self, protected_labels, dist, data):
+        nr_protected_group = sum(protected_labels)
+        nr_non_protected_group = len(data) - nr_protected_group
+        dist_c_prot = []
+        data_c_prot = []
+        dist_c_n_prot = []
+        data_c_n_prot = []
 
         for i in range(0, len(data)):
             if protected_labels[i] == 0:
-                dist_cn.append(dist[i])
-                data_cn.append(data[i])
+                dist_c_n_prot.append(dist[i])
+                data_c_n_prot.append(data[i])
             else:
-                dist_cp.append(dist[i])
-                data_cp.append(data[i])
+                dist_c_prot.append(dist[i])
+                data_c_prot.append(data[i])
 
-        dw0 = self.partial_dfair(nr_cp, dist_cp, data_cp, 0) - self.partial_dfair(nr_cn, dist_cn, data_cn, 0)
-        dw1 = self.partial_dfair(nr_cp, dist_cp, data_cp, 1) - self.partial_dfair(nr_cn, dist_cn, data_cn, 1)
+        dw0 = self.partial_dfair(nr_protected_group, dist_c_prot, data_c_prot, 0) - self.partial_dfair(
+            nr_non_protected_group, dist_c_n_prot, data_c_n_prot, 0)
+        dw1 = self.partial_dfair(nr_protected_group, dist_c_prot, data_c_prot, 1) - self.partial_dfair(
+            nr_non_protected_group, dist_c_n_prot, data_c_n_prot, 1)
         return [dw0, dw1]
 
     def partial_dfair(self, nr_data, filter_dist, filter_data, pclass):

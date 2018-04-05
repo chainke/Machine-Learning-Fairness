@@ -124,8 +124,6 @@ def getProtected():
         else:
             protected.append(1)
 
-    # print(protected)
-
     return protected
 
 
@@ -145,11 +143,9 @@ for i in range(len(Y_predicted)):
     if fair_Y_predicted[i] != Y_predicted[i]:
         print("fair: " + str(fair_Y_predicted[i]))
         print("normal: " + str(Y_predicted[i]))
-        counter = counter+1
+        counter = counter + 1
 
 print("number of different outcomes: " + str(counter))
-
-
 
 # Compute the mean difference, that is, the difference between the average credit score for
 # whites and non-whites
@@ -204,4 +200,4 @@ ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1
             linewidths=2, s=150, marker='D')
 ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
             edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-#plt.show()
+plt.show()

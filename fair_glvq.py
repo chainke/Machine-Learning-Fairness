@@ -26,6 +26,28 @@ def _squared_euclidean(a, b=None):
     return np.maximum(d, 0)
 
 
+def sgd(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def dsgd(x):
+    return np.exp(-x) / ((np.exp(-x) + 1) ** 2)
+
+
+def mean_difference(protected_labels, nr_cp, dist):
+    nr_cn = len(protected_labels) - nr_cp
+    sgd_positive_class = 0
+    sgd_negative_class = 0
+    for i in range(0, len(protected_labels)):
+        d0 = dist[i][0]
+        d1 = dist[i][1]
+        mu = sgd((d0 - d1) / (d0 + d1))
+        sgd_positive_class += protected_labels[i] * mu
+        sgd_negative_class += (1 - protected_labels[i]) * mu
+
+    fairnessdiff = (sgd_positive_class / nr_cp - sgd_negative_class / nr_cn) ** 2
+    return fairnessdiff
+
 class GlvqModel(BaseEstimator, ClassifierMixin):
     """Generalized Learning Vector Quantization
 

@@ -37,7 +37,12 @@ def normalized_mean_difference(protected_labels, nr_protected, dist):
 
 def minimum_norm(sum_phi, m, nr_protected):
     values = [(sum_phi / m) / (1 - nr_protected / m), (1 - sum_phi / m) / (nr_protected / m)]
-    min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
+
+    if values[0] == values[1]:
+        min_index = 2
+        min_value = values[0]
+    else:
+        min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
     return min_index, min_value
 
 
@@ -60,7 +65,7 @@ def sgd(x):
 def dsgd(x):
     return np.exp(-x) / ((np.exp(-x) + 1) ** 2)
 
-
+#=============================================================================================================
 class GlvqModel(BaseEstimator, ClassifierMixin):
     """Generalized Learning Vector Quantization
 
@@ -311,30 +316,50 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
         dist = self._compute_distance(x)
         return (self.c_w_[dist.argmin(1)])
 
-
+# =============================================================================================================
 # protected lables 1 = in protected class
 
-    def gradient_norm_mean_difference(self, protected_labels, nr_cp, dist, data):
-        nr_cn = len(data) - nr_cp
-        dist_cn = []
-        dist_cp = []
-        data_cn = []
-        data_cp = []
+    def gradient_norm_mean_difference(self, protected_labels, dist, data):
+        m = len(protected_labels)
+        nr_protected = sum(protected_labels)
+        g = []
+
+        sgd_unprotected, sgd_protected = fairness_phi(protected_labels, dist)
+        sum_phi = sgd_protected+sgd_unprotected
+
+        min_index, min_value = minimum_norm(sum_phi, m, nr_protected)
+        dwi_min = self.gradient_minimum(dist, data, nr_protected, min_index)
+        mean_diff = mean_difference(protected_labels, dist, data)
+        dwi_mean_diff = self.gradient_mean_difference(protected_labels, dist, data)
+        for i in range(0,1):
+            dwi = (dwi_mean_diff[i]*min_value-mean_diff*dwi_min[i])/(min_value ** 2)
+            g.append(dwi)
+        return g
+
+    def gradient_mean_difference(self, protected_labels, dist, data):
+        nr_protected = sum(protected_labels)
+        nr_unprotected = len(data) - nr_protected
+        dist_protected = []
+        data_protected = []
+        dist_unprotected = []
+        data_unprotected = []
 
         for i in range(0, len(data)):
             if protected_labels[i] == 0:
-                dist_cn.append(dist[i])
-                data_cn.append(data[i])
+                dist_unprotected.append(dist[i])
+                data_unprotected.append(data[i])
             else:
-                dist_cp.append(dist[i])
-                data_cp.append(data[i])
+                dist_protected.append(dist[i])
+                data_protected.append(data[i])
 
-        dw0 = self.partial_dfair(nr_cp, dist_cp, data_cp, 0) - self.partial_dfair(nr_cn, dist_cn, data_cn, 0)
-        dw1 = self.partial_dfair(nr_cp, dist_cp, data_cp, 1) - self.partial_dfair(nr_cn, dist_cn, data_cn, 1)
+        dw0 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 0) - self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 0)
+        dw1 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 1) - self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 1)
         return [dw0, dw1]
 
     def dwi_mean_difference(self, nr_data, dist, data, wi):
-        sum = np.zeros(len(data[0]))
+        summe = np.zeros(len(data[0]))
         vz = wi * 2 - 1
         for i in range(0, len(data)):
             # TODO: Hardcoded "negative" class, should be adjustable later.
@@ -342,19 +367,29 @@ class GlvqModel(BaseEstimator, ClassifierMixin):
             d1 = dist[i][1]
             drel = dist[i][1 - wi]
             mu = (d0 - d1) / (d0 + d1)
-            sum += dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (data[i] - self.w_[wi])
-        return vz * sum / nr_data
+            summe += dsgd(mu) * (4 * drel / (d0 + d1) ** 2) * (data[i] - self.w_[wi])
+        return vz * summe / nr_data
 
     # We normalize through min(A,B) and therefore need the partial derivatives of A, B, and 1/2(A+B).
     # The following methods compute the derivatives.
 
-    def dwi_minimuma(self, dist, data, nr_protected, wi):
+    def dwi_minimum_a(self, dist, data, nr_protected, wi):
         m = len(data)
         dwi_min_a = self.dwi_mean_difference(1, dist, data, wi)/(m-nr_protected)
         return dwi_min_a
 
-    def dwi_minimumb(self, dist, data, nr_protected, wi):
+    def dwi_minimum_b(self, dist, data, nr_protected, wi):
         dwi_min_b = -self.dwi_mean_difference(1, dist, data, wi)/(nr_protected)
         return dwi_min_b
 
-
+    def gradient_minimum(self, dist, data, nr_protected, case):
+        dwi_min = []
+        for i in range(0,1):
+            if case == 0:
+                dwi_min.append(self.dwi_minimum_a(dist, data, nr_protected, i))
+            if case == 1:
+                dwi_min.append(self.dwi_minimum_b(dist, data, nr_protected, i))
+            else:
+                dwi_min.append(0.5*(self.dwi_minimum_a(dist, data, nr_protected, i)
+                            + self.dwi_minimum_b(dist, data, nr_protected, i)))
+        return dwi_min

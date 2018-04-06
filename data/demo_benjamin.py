@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from GLVQ.plot_2d import tango_color
 from sklearn_lvq.glvq import GlvqModel
 from fair_glvq import MeanDiffGlvqModel as FairGlvqModel
+from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
 # has the purpose to predict how likely it is that customers will pay back their debt.
@@ -33,7 +34,7 @@ from fair_glvq import MeanDiffGlvqModel as FairGlvqModel
 # The recorded training data may look something like this:
 
 # Number of training data points
-m = 10000
+m = 1000
 # Gaussian standard deviation for distance from city center
 std_1 = 0.2
 # Gaussian standard deviation for income
@@ -48,8 +49,8 @@ p1 = 0.5
 q = 0.5
 
 # fairness factor
-alpha = 10000
-
+alpha1 = 100
+alpha2 = 100
 # generate a vector C denoting the racial information
 C = np.zeros(m, dtype=bool)
 m0 = int(m * q)
@@ -133,8 +134,12 @@ def getTrainedModel():
 
 
 protected_label = getProtected()
-fair_model = FairGlvqModel(alpha)
+fair_model = FairGlvqModel(alpha1)
 fair_model.fit_fair(X, Y, protected_label)
+
+
+norm_fair_model = NormFairGlvqModel(alpha2)
+norm_fair_model.fit_fair(X, Y, protected_label)
 
 # Check some fairness measures
 fair_Y_predicted = fair_model.predict(X)
@@ -146,7 +151,19 @@ for i in range(len(Y_predicted)):
         print("normal: " + str(Y_predicted[i]))
         counter = counter + 1
 
-print("number of different outcomes: " + str(counter))
+print("number of different outcomes in just fair: " + str(counter))
+
+# Check some fairness measures
+norm_fair_Y_predicted = norm_fair_model.predict(X)
+
+counter = 0
+for i in range(len(Y_predicted)):
+    if norm_fair_Y_predicted[i] != Y_predicted[i]:
+        print("fair: " + str(norm_fair_Y_predicted[i]))
+        print("normal: " + str(Y_predicted[i]))
+        counter = counter + 1
+
+print("number of different outcomes in normalized fair: " + str(counter))
 
 # Compute the mean difference, that is, the difference between the average credit score for
 # whites and non-whites
@@ -158,7 +175,11 @@ fair_D = fair_model._compute_distance(X)
 ff = np.divide(fair_D[:, 0] - D[:, 1], fair_D[:, 0] + fair_D[:, 1])
 ff = np.divide(np.ones(m), 1 + np.exp(-ff))
 
-print('mean difference: {}'.format(np.mean(ff[C]) - np.mean(ff[np.logical_not(C)])))
+norm_fair_D = norm_fair_model._compute_distance(X)
+fff = np.divide(norm_fair_D[:, 0] - D[:, 1], norm_fair_D[:, 0] + norm_fair_D[:, 1])
+fff = np.divide(np.ones(m), 1 + np.exp(-fff))
+
+print('[fair] mean difference: {}'.format(np.mean(ff[C]) - np.mean(ff[np.logical_not(C)])))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified
@@ -172,8 +193,23 @@ print('fraction of whites who would not pay their money back but get a good scor
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(
     np.mean(np.not_equal(fair_Y_predicted[log11], Y[log11]))))
 
+
+print('[norm fair] mean difference: {}'.format(np.mean(fff[C]) - np.mean(fff[np.logical_not(C)])))
+
+# Compute predictive equality measurements, that is, the fraction of people in a protected group
+# who are erroneously classified
+print('\npredictive equality measurements:')
+print('fraction of non-whites who would not pay their money back but get a good score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log00], Y[log00]))))
+print('fraction of non-whites who would pay their money back but get a bad score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log01], Y[log01]))))
+print('fraction of whites who would not pay their money back but get a good score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log10], Y[log10]))))
+print('fraction of whites who would pay their money back but get a bad score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log11], Y[log11]))))
+
 # ax1  = fig.add_subplot(111)
-f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
 # Plot the data and the prototypes as well
 f.canvas.set_window_title("LVQ with continuous distance to city center")
 ax1.set_xlabel("Distance from City Center")
@@ -200,5 +236,18 @@ ax2.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors
 ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
             linewidths=2, s=150, marker='D')
 ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
+            edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
+
+ax3.set_xlabel("Distance from City Center")
+ax3.set_ylabel("Income")
+ax3.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+ax3.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+            marker='o')
+ax3.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
+ax3.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+            marker='s')
+ax3.scatter(norm_fair_model.w_[0, 0], norm_fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
+            linewidths=2, s=150, marker='D')
+ax3.scatter(norm_fair_model.w_[1, 0], norm_fair_model.w_[1, 1], c=tango_color('scarletred', 1),
             edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
 plt.show()

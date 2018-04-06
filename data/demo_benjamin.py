@@ -8,9 +8,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from GLVQ.plot_2d import tango_color
-from GLVQ.plot_2d import to_tango_colors
-from GLVQ.plot_2d import plot2d
-from GLVQ.glvq import GlvqModel
+from sklearn_lvq.glvq import GlvqModel
 from fair_glvq import GlvqModel as FairGlvqModel
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
@@ -48,6 +46,9 @@ p0 = 0.8
 p1 = 0.5
 # proportion of non-white people in the overall data set
 q = 0.5
+
+# fairness factor
+alpha = 500
 
 # generate a vector C denoting the racial information
 C = np.zeros(m, dtype=bool)
@@ -132,8 +133,8 @@ def getTrainedModel():
 
 
 protected_label = getProtected()
-fair_model = FairGlvqModel(100)
-fair_model.fit(X, Y, protected_label)
+fair_model = FairGlvqModel(alpha)
+fair_model.fit_fair(X, Y, protected_label)
 
 # Check some fairness measures
 fair_Y_predicted = fair_model.predict(X)

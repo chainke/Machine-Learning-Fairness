@@ -10,9 +10,10 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
 
-from itertools import product
 from sklearn.utils import validation
+from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_is_fitted
+from itertools import product
 
 from sklearn_lvq.lvq import _LvqBaseModel
 
@@ -25,29 +26,6 @@ def _squared_euclidean(a, b=None):
         d = np.sum(a ** 2, 1)[np.newaxis].T + np.sum(b ** 2, 1) - 2 * a.dot(
             b.T)
     return np.maximum(d, 0)
-
-
-def sgd(x, beta):
-    return 1 / (1 + np.exp(-beta * x))
-
-
-def dsgd(x, beta):
-    return -beta * np.exp(-beta * x) / ((np.exp(-beta*x) + 1) ** 2)
-
-
-def mean_difference(protected_labels, nr_protected_group, dist, beta):
-    nr_non_protected_group = len(protected_labels) - nr_protected_group
-    sgd_positive_class = 0
-    sgd_negative_class = 0
-    for i in range(0, len(protected_labels)):
-        d0 = dist[i][0]
-        d1 = dist[i][1]
-        mu = sgd((d0 - d1) / (d0 + d1), beta)
-        sgd_positive_class += protected_labels[i] * mu
-        sgd_negative_class += (1 - protected_labels[i]) * mu
-
-    fairnessdiff = (sgd_positive_class / nr_protected_group - sgd_negative_class / nr_non_protected_group) ** 2
-    return fairnessdiff
 
 
 class GlvqModel(_LvqBaseModel):
@@ -65,15 +43,21 @@ class GlvqModel(_LvqBaseModel):
         Prototypes to start with. If not given initialization near the class
         means. Class label must be placed as last entry of each prototype.
 
-    alpha : percentage of fairness relevance.
-        alpha = 0 means normal glvq.
-
     max_iter : int, optional (default=2500)
         The maximum number of iterations.
 
     gtol : float, optional (default=1e-5)
         Gradient norm must be less than gtol before successful termination
         of bfgs.
+
+    beta : int, optional (default=2)
+        Used inside phi.
+        1 / (1 + np.math.exp(-beta * x))
+
+    C : array-like, shape = [2,3] ,optional
+        Weights for wrong classification of form (y_real,y_pred,weight)
+        Per default all weights are one, meaning you only need to specify
+        the weights not equal one.
 
     display : boolean, optional (default=False)
         Print information about the bfgs steps.
@@ -102,19 +86,7 @@ class GlvqModel(_LvqBaseModel):
     GrlvqModel, GmlvqModel, LgmlvqModel
     """
 
-    # def __init__(self, alpha=0, prototypes_per_class=1, initial_prototypes=None,
-    #              max_iter=2500, gtol=1e-5, beta=2,
-    #              display=False, random_state=None):
-    #     self.random_state = random_state
-    #     self.initial_prototypes = initial_prototypes
-    #     self.prototypes_per_class = prototypes_per_class
-    #     self.display = display
-    #     self.max_iter = max_iter
-    #     self.gtol = gtol
-    #     self.alpha = alpha
-    #     self.beta = beta
-
-    def __init__(self, alpha=0, prototypes_per_class=1, initial_prototypes=None,
+    def __init__(self, prototypes_per_class=1, initial_prototypes=None,
                  max_iter=2500, gtol=1e-5, beta=2, C=None,
                  display=False, random_state=None):
         super(GlvqModel, self).__init__(prototypes_per_class=prototypes_per_class,
@@ -123,7 +95,6 @@ class GlvqModel(_LvqBaseModel):
                                         random_state=random_state)
         self.beta = beta
         self.c = C
-        self.alpha = alpha
 
     def phi(self, x):
         """
@@ -147,8 +118,7 @@ class GlvqModel(_LvqBaseModel):
                 1 + np.exp(self.beta * x)) ** 2
 
     def _optgrad(self, variables, training_data, label_equals_prototype,
-                 random_state, protected_labels, nr_protected_group):
-        # --------------------------------------------------------------
+                 random_state):
         n_data, n_dim = training_data.shape
         nb_prototypes = self.c_w_.size
         prototypes = variables.reshape(nb_prototypes, n_dim)
@@ -159,7 +129,7 @@ class GlvqModel(_LvqBaseModel):
         distwrong = d_wrong.min(1)
         pidxwrong = d_wrong.argmin(1)
 
-        d_correct = dist.copy()
+        d_correct = dist
         d_correct[np.invert(label_equals_prototype)] = np.inf
         distcorrect = d_correct.min(1)
         pidxcorrect = d_correct.argmin(1)
@@ -167,13 +137,10 @@ class GlvqModel(_LvqBaseModel):
         distcorrectpluswrong = distcorrect + distwrong
         distcorectminuswrong = distcorrect - distwrong
         mu = distcorectminuswrong / distcorrectpluswrong
-
-        fair_diff = mean_difference(protected_labels, nr_protected_group, dist, self.beta)
-        fair_dw = self.gradient_mean_difference(protected_labels, dist, training_data)
-        distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
-
         mu = np.vectorize(self.phi_prime)(mu)
+
         g = np.zeros(prototypes.shape)
+        distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
 
         for i in range(nb_prototypes):
             idxc = i == pidxcorrect
@@ -184,19 +151,16 @@ class GlvqModel(_LvqBaseModel):
             g[i] = dcd.dot(training_data[idxw]) - dwd.dot(
                 training_data[idxc]) + (dwd.sum(0) -
                                         dcd.sum(0)) * prototypes[i]
-            g[i] += self.alpha * 2 * fair_diff * fair_dw[i]
-
         g[:nb_prototypes] = 1 / n_data * g[:nb_prototypes]
         g = g * (1 + 0.0001 * random_state.rand(*g.shape) - 0.5)
         return g.ravel()
 
-    def _optfun(self, variables, training_data, label_equals_prototype, protected_labels, nr_protected_group):
+    def _optfun(self, variables, training_data, label_equals_prototype):
         n_data, n_dim = training_data.shape
         nb_prototypes = self.c_w_.size
         prototypes = variables.reshape(nb_prototypes, n_dim)
 
         dist = _squared_euclidean(training_data, prototypes)
-        # print(dist)
         d_wrong = dist.copy()
         d_wrong[label_equals_prototype] = np.inf
         distwrong = d_wrong.min(1)
@@ -208,18 +172,10 @@ class GlvqModel(_LvqBaseModel):
         distcorrectpluswrong = distcorrect + distwrong
         distcorectminuswrong = distcorrect - distwrong
         mu = distcorectminuswrong / distcorrectpluswrong
-
         [self._map_to_int(x) for x in self.c_w_[label_equals_prototype.argmax(1)]]
         mu *= self.c_[label_equals_prototype.argmax(1), d_wrong.argmin(1)]  # y_real, y_pred
 
-        mu_sum = np.vectorize(self.phi)(mu).sum(0)
-
-        if self.alpha == 0:
-            return mu_sum
-
-        error_normal = mu_sum / len(training_data)
-        error_fairness = self.alpha * mean_difference(protected_labels, nr_protected_group, dist, self.beta)
-        return error_normal + error_fairness
+        return np.vectorize(self.phi)(mu).sum(0)
 
     def _validate_train_parms(self, train_set, train_lab):
         if not isinstance(self.beta, int):
@@ -239,18 +195,16 @@ class GlvqModel(_LvqBaseModel):
     def _map_to_int(self, item):
         return np.where(self.c_w_ == item)[0]
 
-    def _optimize(self, x, y, protected_labels, random_state):
+    def _optimize(self, x, y, random_state):
         label_equals_prototype = y[np.newaxis].T == self.c_w_
-        nr_protected_group = sum(protected_labels,0)
         res = minimize(
             fun=lambda vs: self._optfun(
                 variables=vs, training_data=x,
-                label_equals_prototype=label_equals_prototype, protected_labels=protected_labels,
-                nr_protected_group=nr_protected_group),
+                label_equals_prototype=label_equals_prototype),
             jac=lambda vs: self._optgrad(
                 variables=vs, training_data=x,
                 label_equals_prototype=label_equals_prototype,
-                random_state=random_state, protected_labels=protected_labels, nr_protected_group=nr_protected_group),
+                random_state=random_state),
             method='l-bfgs-b', x0=self.w_,
             options={'disp': self.display, 'gtol': self.gtol,
                      'maxiter': self.max_iter})
@@ -261,78 +215,6 @@ class GlvqModel(_LvqBaseModel):
         if w is None:
             w = self.w_
         return cdist(x, w, 'euclidean')
-
-    def split_x(self, x, dim_protected):
-
-        protected = []
-        new_x = []
-
-        for i in range(0, len(x)):
-            protected.append(x[i][dim_protected])
-            new_x.append(
-                x[i][:dim_protected] + x[i][dim_protected + 1:]
-            )
-
-        return new_x, protected
-
-    def fit_fair(self, x, y, protected_labels):
-        """Fit the GLVQ model to the given training data and parameters using
-        l-bfgs-b.
-
-        Parameters
-        ----------
-        x : array-like, shape = [n_samples, n_features]
-          Training vector, where n_samples in the number of samples and
-          n_features is the number of features.
-        y : array, shape = [n_samples]
-          Target values (integers in classification, real numbers in
-          regression)
-
-        Returns
-        --------
-        self
-        """
-        x, y, random_state = self._validate_train_parms(x, y)
-        if len(np.unique(y)) == 1:
-            raise ValueError("fitting " + type(
-                self).__name__ + " with only one class is not possible")
-
-        self._optimize(x, y, protected_labels, random_state)
-        return self
-
-    def gradient_mean_difference(self, protected_labels, dist, data):
-        nr_protected = sum(protected_labels)
-        nr_unprotected = len(data) - nr_protected
-        dist_protected = []
-        data_protected = []
-        dist_unprotected = []
-        data_unprotected = []
-
-        for i in range(0, len(data)):
-            if protected_labels[i] == 0:
-                dist_unprotected.append(dist[i])
-                data_unprotected.append(data[i])
-            else:
-                dist_protected.append(dist[i])
-                data_protected.append(data[i])
-
-        dw0 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 0) - self.dwi_mean_difference(
-            nr_unprotected, dist_unprotected, data_unprotected, 0)
-        dw1 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 1) - self.dwi_mean_difference(
-            nr_unprotected, dist_unprotected, data_unprotected, 1)
-        return [dw0, dw1]
-
-    def dwi_mean_difference(self, nr_data, dist, data, wi):
-        sum = np.zeros(len(data[0]))
-        vz = wi * 2 - 1
-        for i in range(0, len(data)):
-            # TODO: Hardcoded "negative" class, should be adjustable later.
-            d0 = dist[i][0]
-            d1 = dist[i][1]
-            drel = dist[i][1 - wi]
-            mu = (d0 - d1) / (d0 + d1)
-            sum += dsgd(mu, self.beta) * (4 * drel / (d0 + d1) ** 2) * (data[i] - self.w_[wi])
-        return vz * sum / nr_data
 
     def predict(self, x):
         """Predict class membership index for each input sample.

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Data_Generata
 
-from fair_glvq import GlvqModel
+from fair_glvq import MeanDiffGlvqModel
 from GLVQ.plot_2d import to_tango_colors, tango_color
 
 
@@ -38,7 +38,7 @@ weights = 'uniform'
 
 # model fitting
 # TODO: add platt scaling
-glvq = GlvqModel(1)
+glvq = MeanDiffGlvqModel(1)
 # glvq.fit(new_x, y, protected_labels)
 glvq.fit(toy_data, toy_label, toy_protected_labels)
 pred = glvq.predict(toy_data)

@@ -28,11 +28,11 @@ def _squared_euclidean(a, b=None):
 
 
 def sgd(x, beta):
-    return 1 / (1 + np.exp(-beta * x))
+    return 1 / (1 + np.exp(- beta*x))
 
 
 def dsgd(x, beta):
-    return -beta * np.exp(-beta * x) / ((np.exp(-beta*x) + 1) ** 2)
+    return beta*np.exp(-beta*x) / ((np.exp(-beta*x) + 1) ** 2)
 
 
 def mean_difference(protected_labels, nr_protected_group, dist, beta):
@@ -46,11 +46,11 @@ def mean_difference(protected_labels, nr_protected_group, dist, beta):
         sgd_positive_class += protected_labels[i] * mu
         sgd_negative_class += (1 - protected_labels[i]) * mu
 
-    fairnessdiff = (sgd_positive_class / nr_protected_group - sgd_negative_class / nr_non_protected_group) ** 2
+    fairnessdiff = sgd_positive_class / nr_protected_group - sgd_negative_class / nr_non_protected_group
     return fairnessdiff
 
 
-class GlvqModel(_LvqBaseModel):
+class MeanDiffGlvqModel(_LvqBaseModel):
     """Generalized Learning Vector Quantization
 
     Parameters
@@ -117,10 +117,10 @@ class GlvqModel(_LvqBaseModel):
     def __init__(self, alpha=0, prototypes_per_class=1, initial_prototypes=None,
                  max_iter=2500, gtol=1e-5, beta=2, C=None,
                  display=False, random_state=None):
-        super(GlvqModel, self).__init__(prototypes_per_class=prototypes_per_class,
-                                        initial_prototypes=initial_prototypes,
-                                        max_iter=max_iter, gtol=gtol, display=display,
-                                        random_state=random_state)
+        super(MeanDiffGlvqModel, self).__init__(prototypes_per_class=prototypes_per_class,
+                                                initial_prototypes=initial_prototypes,
+                                                max_iter=max_iter, gtol=gtol, display=display,
+                                                random_state=random_state)
         self.beta = beta
         self.c = C
         self.alpha = alpha
@@ -218,14 +218,14 @@ class GlvqModel(_LvqBaseModel):
             return mu_sum
 
         error_normal = mu_sum / len(training_data)
-        error_fairness = self.alpha * mean_difference(protected_labels, nr_protected_group, dist, self.beta)
+        error_fairness = self.alpha * (mean_difference(protected_labels, nr_protected_group, dist, self.beta) ** 2)
         return error_normal + error_fairness
 
     def _validate_train_parms(self, train_set, train_lab):
         if not isinstance(self.beta, int):
             raise ValueError("beta must a an integer")
 
-        ret = super(GlvqModel, self)._validate_train_parms(train_set, train_lab)
+        ret = super(MeanDiffGlvqModel, self)._validate_train_parms(train_set, train_lab)
 
         self.c_ = np.ones((self.c_w_.size, self.c_w_.size))
         if self.c is not None:
@@ -315,7 +315,6 @@ class GlvqModel(_LvqBaseModel):
             else:
                 dist_protected.append(dist[i])
                 data_protected.append(data[i])
-
         dw0 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 0) - self.dwi_mean_difference(
             nr_unprotected, dist_unprotected, data_unprotected, 0)
         dw1 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 1) - self.dwi_mean_difference(

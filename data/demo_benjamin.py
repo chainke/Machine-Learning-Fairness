@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from GLVQ.plot_2d import tango_color
 from sklearn_lvq.glvq import GlvqModel
-from fair_glvq import GlvqModel as FairGlvqModel
+from fair_glvq import MeanDiffGlvqModel as FairGlvqModel
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
 # has the purpose to predict how likely it is that customers will pay back their debt.
@@ -33,7 +33,7 @@ from fair_glvq import GlvqModel as FairGlvqModel
 # The recorded training data may look something like this:
 
 # Number of training data points
-m = 1000
+m = 10000
 # Gaussian standard deviation for distance from city center
 std_1 = 0.2
 # Gaussian standard deviation for income
@@ -48,7 +48,7 @@ p1 = 0.5
 q = 0.5
 
 # fairness factor
-alpha = 500
+alpha = 10000
 
 # generate a vector C denoting the racial information
 C = np.zeros(m, dtype=bool)

@@ -96,6 +96,17 @@ def data_credit():
 
 	measure.printAbsoluteMeasures(predicted_glrvq.tolist(), protected)
 
+	print('\n\nGLVQ with weighted preprocessing:\n')
+
+	newX = mi.weighted_preprocessing(X, y, protected)
+
+	glvq = GlvqModel()
+	glvq.fit(newX,y)
+	predicted_glvq = glvq.predict(newX)
+
+	print('classification accuracy:', glvq.score(newX, predicted_glvq))
+	measure.printAbsoluteMeasures(predicted_glvq.tolist(), protected)
+
 
 
 #################################################

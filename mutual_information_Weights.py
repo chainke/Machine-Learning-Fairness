@@ -110,9 +110,6 @@ def grlvq_fit(X, y, feature):
 
     """
 
-    #print(X)
-    #print(feature)
-
     weights = compute_vector_weights(feature,y,X)
 
     #weights_processed = skip_smallest_weight(weights)
@@ -127,6 +124,30 @@ def grlvq_fit(X, y, feature):
 
     print('classification accuracy:', grlvq.score(X, pred))
     return weights_processed, pred
+
+def weighted_preprocessing(X, y, feature):
+    weights = compute_vector_weights(feature, y, X)
+
+    newX = X
+
+    # multiply the weight to the corresponding feature for each point:
+
+    for i in range(len(X)):
+        # get the data point
+        processed_point = X[i]
+        for j in range(len(processed_point)):
+            # multiply the weights to the features of the data point
+            # but leave out the protected feature since its weight is 0
+            if(weights[j] != 0):
+                processed_point[j] *= weights[j]
+
+
+        # add data point to new x
+        newX[i] = processed_point
+
+    return newX
+
+
 
 def skip_smallest_weight(weights):
     smallest_weight = 1

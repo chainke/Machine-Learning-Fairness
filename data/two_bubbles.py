@@ -13,6 +13,8 @@ from glvq.plot_2d import plot2d
 from glvq.glvq import GlvqModel
 from sklearn.utils import shuffle
 
+# DON'T USE AFTER GENERATOR CLASS IS WORKING
+# TODO: use generator class for data generation. Currently TWO versions of the same thing
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
 # has the purpose to predict how likely it is that customers will pay back their debt.

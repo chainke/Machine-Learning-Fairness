@@ -55,13 +55,18 @@ q_urban = 0.8
 # proportion of non-white people in suburban neighbourhoods
 q_suburban = 1 - q_urban
 
-# proportion of all people in urban neighbourhoods
+# proportion of white people in urban neighbourhoods
 p_urban = 0.5
 
 # number of people living in urban neighbourhoods
-m_urban = round(m * p_urban)
+m_urban = int(m * (1 - q) * p_urban + m * q * q_urban)
 # number of people living in suburban neighbourhoods
 m_suburb = m - m_urban
+
+print("----")
+print("Total number of people in urban neighbourhoods: \t{}".format(m_urban))
+print("Total number of people in suburban neighbourhoods: \t{}".format(m_suburb))
+print("----")
 
 X_urban = np.random.randn(m_urban, 2).dot(np.array([[std_1, 0], [0, std_2]]))
 X_suburb = np.random.randn(m_suburb, 2).dot(np.array([[std_1, 0], [0, std_2]]))
@@ -75,13 +80,23 @@ X_urban_sorted = sorted(X_urban, key=lambda x: x[1], reverse=False)
 # generate a vector C denoting the racial information
 C = []
 C.append(np.zeros(m_urban, dtype=bool))
-m0    = int(m_urban * q_urban * q)
+# m0    = int(m_urban * q_urban * q)
+m0 = int(q_urban * q * m)
+# q * m = 0.5 * 1000 = 500                  non-whites
+# q_urban * q * m = 0.8 * 0.5 * 1000 = 400
+#
 C[0][m0:] = True
+print("Number of \tnon-white \turban: \t\t{}".format(m0))
+print("Number of \twhite \t\turban: \t\t{}".format(m_urban- m0))
 
 X_suburb_sorted = sorted(X_suburb, key=lambda x: x[1], reverse=False)
 C.append(np.zeros(m_suburb, dtype=bool))
-m1    = int(m_suburb * q_suburban * q)
+m1    = int(m * q_suburban * q)
 C[1][m1:] = True
+print("Number of \tnon-white \tsuburban: \t{}".format(m1))
+print("Number of \twhite \t\tsuburban: \t{}".format(m_suburb - m1))
+
+print("----")
 
 # assign class in proportion of subgroup and location
 # -> should sum up correctly
@@ -94,9 +109,11 @@ Y.append(np.zeros(m_urban, dtype=bool))
 m00   = int(m0 * p0)
 Y[0][m00:m0] = True
 Y[0][:m0] = shuffle(Y[0][:m0])
+print("Number of \turban \t\tnon-white \tdo not pay\t(m00): {}".format(m00))
 m10   = int((m_urban - m0) * p1)
 Y[0][m0+m10:] = True
 Y[0][m0:] = shuffle(Y[0][m0:])
+print("Number of \turban \t\twhite \t\tdo not pay\t(m10): {}".format(m10))
 
 # generate a vector Y for suburban area denoting the actual information about whether
 # money was paid back or not
@@ -104,22 +121,26 @@ Y.append(np.zeros(m_suburb, dtype=bool))
 m00   = int(m1 * p0)
 Y[1][m00:m0] = True
 Y[1][:m0] = shuffle(Y[1][:m0])
-m10   = int((m_suburb - m0) * p1)
+print("Number of \tsuburban \tnon-white \tdo not pay\t(m00): {}".format(m00))
+m10   = int((m_suburb - m1) * p1)
 Y[1][m0+m10:] = True
 Y[1][m0:] = shuffle(Y[1][m0:])
-
+print("Number of \tsuburban \twhite \t\tdo not pay\t(m10): {}".format(m10))
+print("----")
 
 X_full = np.concatenate((X_urban_sorted, X_suburb_sorted))
 C_full = np.concatenate((C[0], C[1]))
 Y_full = np.concatenate((Y[0], Y[1]))
 
-# shift data for non-white people who do notpay their money back
+
+# non-white: do not pay
 log00 = np.logical_and(np.logical_not(C_full), np.logical_not(Y_full))
-# shift data for non-white people who do pay their money back
+# non-white: pay
 log01 = np.logical_and(np.logical_not(C_full), Y_full)
-# shift data for white people who do not pay their money back
+
+# white: do not pay
 log10 = np.logical_and(C_full, np.logical_not(Y_full))
-# shift data for white people who do pay their money back
+# white: pay
 log11 = np.logical_and(C_full, Y_full)
 
 # Train a GLVQ model
@@ -133,9 +154,13 @@ ax  = fig.add_subplot(111)
 ax.set_xlabel("Distance from City Center")
 ax.set_ylabel("Income")
 
+# non-white: do not pay
 ax.scatter(X_full[log00, 0], X_full[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+# non-white: pay
 ax.scatter(X_full[log01, 0], X_full[log01, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+# white: do not pay
 ax.scatter(X_full[log10, 0], X_full[log10, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
+# white: pay
 ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
 
 
@@ -147,7 +172,7 @@ ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color('scarletred', 0), e
 
 ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2), linewidths=2, s=150, marker='D')
 ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-#plt.show()
+plt.show()
 
 
 # # Plot the data and the prototypes as well

@@ -156,24 +156,32 @@ ax  = fig.add_subplot(111)
 ax.set_xlabel("Distance from City Center")
 ax.set_ylabel("Income")
 
+color_0 = 'skyblue'
+color_1 = 'scarletred'
+color_pay = 'butter'
+
 # non-white: do not pay
-ax.scatter(X_full[log00, 0], X_full[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+ax.scatter(X_full[log00, 0], X_full[log00, 1], c=tango_color(color_0, 0),
+           edgecolors=tango_color(color_0, 2), marker='o')
 # non-white: pay
-ax.scatter(X_full[log01, 0], X_full[log01, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+ax.scatter(X_full[log01, 0], X_full[log01, 1], c=tango_color(color_pay, 0),
+           edgecolors=tango_color(color_0, 2), marker='o')
 # white: do not pay
-ax.scatter(X_full[log10, 0], X_full[log10, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
+ax.scatter(X_full[log10, 0], X_full[log10, 1], c=tango_color(color_1, 0),
+           edgecolors=tango_color(color_1, 2), marker='s')
 # white: pay
-ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
+ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color(color_pay, 0),
+           edgecolors=tango_color(color_1, 2), marker='s')
 
 
-# ax.scatter(X_full[log00, 0], X_full[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
-# ax.scatter(X_full[log01, 0], X_full[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='o')
-# ax.scatter(X_full[log10, 0], X_full[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
-# ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='s')
+# ax.scatter(X_full[log00, 0], X_full[log00, 1], c=tango_color(color_0, 0), edgecolors=tango_color(color_0, 2), marker='o')
+# ax.scatter(X_full[log01, 0], X_full[log01, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='o')
+# ax.scatter(X_full[log10, 0], X_full[log10, 1], c=tango_color(color_0, 0), edgecolors=tango_color(color_0, 2), marker='s')
+# ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='s')
 
 
-ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2), linewidths=2, s=150, marker='D')
-ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
+ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color(color_0, 1), edgecolors=tango_color(color_0, 2), linewidths=2, s=150, marker='D')
+ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color(color_1, 1), edgecolors=tango_color(color_1, 2), linewidths=2, s=150, marker='D')
 plt.show()
 
 
@@ -185,7 +193,7 @@ plt.show()
 # ax.set_ylabel("Income")
 #
 # ax.scatter(X_urban[:, 0], X_urban[:, 1], c=tango_color('butter', 0), edgecolors=tango_color('butter', 2), marker='o')
-# ax.scatter(X_suburb[:, 0], X_suburb[:, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2), marker='o')
+# ax.scatter(X_suburb[:, 0], X_suburb[:, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='o')
 #
 #
 # plt.show()

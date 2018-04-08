@@ -1,9 +1,11 @@
 import math
 import numpy as np
+
 import matplotlib.pyplot as plt
 from glvq.plot_2d import tango_color
 from glvq.plot_2d import to_tango_colors
 from glvq.plot_2d import plot2d
+
 from sklearn.utils import shuffle
 from sklearn_lvq.glvq import GlvqModel #TODO: is this right? or even necessary?
 from fair_glvq import MeanDiffGlvqModel as FairGlvqModel
@@ -14,6 +16,11 @@ from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 class DataGen:
 
     def __init__(self):
+        # number of data points     - Likely
+        # proportion of subclasses  - Likely
+        # number of features        - Maybe later?
+        # number of subclasses      - necessary???
+
         pass
 
     # TODO: Add parameter to shift bubbles relative to each other
@@ -58,26 +65,14 @@ class DataGen:
             Y_full:
 
         """
-        # Gaussian standard deviation for distance from city center
-        #std_1 = 0.2
-        # Gaussian standard deviation for income
-        #std_2 = 0.2
 
-        # proportion of non-white people who do not pay their money back (if 0.5 non-discriminatory
-        # classification is trivial)
+        # proportion of non-white people who do not pay their money back
         proportion_0_dont_pay = 1 - proportion_0_pay
         # proportion of white people who do not pay their money back
         proportion_1_dont_pay = 1 - proportion_1_pay
-        # proportion of non-white people in the overall data set
-        # q = 0.5
 
-        # proportion of non-white people in urban neighbourhoods
-        #q_urban = 0.8
         # proportion of non-white people in suburban neighbourhoods
         proportion_0_suburban = 1 - proportion_0_urban
-
-        # proportion of white people in urban neighbourhoods
-        # p_urban = 0.5
 
         # number of people living in urban neighbourhoods
         m_urban = int(number_data_points * (1 - proportion_0) * proportion_1_urban +
@@ -100,33 +95,28 @@ class DataGen:
         X_urban_sorted = sorted(X_urban, key=lambda x: x[1], reverse=False)
 
         # generate a vector C denoting the racial information
-        C = []
-        C.append(np.zeros(m_urban, dtype=bool))
-        # m0    = int(m_urban * q_urban * q)
+        C = [np.zeros(m_urban, dtype=bool)]
+
+        # number of all non-whites living in urban neighbourhoods
         m0 = int(proportion_0_urban * proportion_0 * number_data_points)
-        # q * m = 0.5 * 1000 = 500                  non-whites
-        # q_urban * q * m = 0.8 * 0.5 * 1000 = 400
-        #
         C[0][m0:] = True
+
         print("Number of \tnon-white \turban: \t\t{}".format(m0))
         print("Number of \twhite \t\turban: \t\t{}".format(m_urban - m0))
 
         X_suburb_sorted = sorted(X_suburb, key=lambda x: x[1], reverse=False)
         C.append(np.zeros(m_suburb, dtype=bool))
+        # number of all non-whites living in suburban neighbourhoods
         m1 = int(proportion_0_suburban * proportion_0 * number_data_points)
         C[1][m1:] = True
+
         print("Number of \tnon-white \tsuburban: \t{}".format(m1))
         print("Number of \twhite \t\tsuburban: \t{}".format(m_suburb - m1))
-
         print("----")
-
-        # assign class in proportion of subgroup and location
-        # -> should sum up correctly
 
         # generate a vector Y for urban area denoting the actual information about whether
         # money was paid back or not
-        Y = []
-        Y.append(np.zeros(m_urban, dtype=bool))
+        Y = [np.zeros(m_urban, dtype=bool)]
         # set
         m00 = int(m0 * proportion_0_dont_pay)
         Y[0][m00:m0] = True
@@ -155,3 +145,68 @@ class DataGen:
         Y_full = np.concatenate((Y[0], Y[1]))
 
         return X_full, C_full, Y_full
+
+    def print_dist_glvq(self, X, Y, C):
+        """
+            Prints classification of a given data set with GLVQ.
+
+            Parameters
+            ----------
+            X: np.ndarray of floats
+                Array containing all data point coordinates.
+
+            Y: np.array of bool
+                Array containing all data point outcomes.
+
+            C: np.array of bool
+                Array containing all data point subclass memberships.
+        """
+        # non-white: do not pay
+        log00 = np.logical_and(np.logical_not(C), np.logical_not(Y))
+        # non-white: pay
+        log01 = np.logical_and(np.logical_not(C), Y)
+
+        # white: do not pay
+        log10 = np.logical_and(C, np.logical_not(Y))
+        # white: pay
+        log11 = np.logical_and(C, Y)
+
+        # Train a GLVQ model
+        model = GlvqModel()
+        model.fit(X, Y)
+
+        # Plot the data and the prototypes as well
+        fig = plt.figure()
+        fig.canvas.set_window_title("LVQ with continuous distance to city center")
+        ax = fig.add_subplot(111)
+        ax.set_xlabel("Distance from City Center")
+        ax.set_ylabel("Income")
+
+        color_0 = 'skyblue'
+        color_1 = 'scarletred'
+        color_pay = 'butter'
+
+        # non-white: do not pay
+        ax.scatter(X[log00, 0], X[log00, 1], c=tango_color(color_0, 0),
+                   edgecolors=tango_color(color_0, 2), marker='o')
+        # non-white: pay
+        ax.scatter(X[log01, 0], X[log01, 1], c=tango_color(color_0, 0),
+                   edgecolors=tango_color(color_pay, 2), marker='o')
+        # white: do not pay
+        ax.scatter(X[log10, 0], X[log10, 1], c=tango_color(color_1, 0),
+                   edgecolors=tango_color(color_1, 2), marker='s')
+        # white: pay
+        ax.scatter(X[log11, 0], X[log11, 1], c=tango_color(color_1, 0),
+                   edgecolors=tango_color(color_pay, 2), marker='s')
+
+        # ax.scatter(X[log00, 0], X[log00, 1], c=tango_color(color_0, 0), edgecolors=tango_color(color_0, 2), marker='o')
+        # ax.scatter(X[log01, 0], X[log01, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='o')
+        # ax.scatter(X[log10, 0], X[log10, 1], c=tango_color(color_0, 0), edgecolors=tango_color(color_0, 2), marker='s')
+        # ax.scatter(X[log11, 0], X[log11, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='s')
+
+        ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color(color_0, 1), edgecolors=tango_color(color_0, 2),
+                   linewidths=2, s=150, marker='D')
+        ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color(color_1, 1),
+                   edgecolors=tango_color(color_1, 2), linewidths=2, s=150, marker='D')
+        plt.show()
+        return

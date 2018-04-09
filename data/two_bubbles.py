@@ -7,10 +7,11 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from glvq.plot_2d import tango_color
-from glvq.plot_2d import to_tango_colors
-from glvq.plot_2d import plot2d
-from glvq.glvq import GlvqModel
+from sklearn_lvq.utils import _tango_color
+#from GLVQ.plot_2d import tango_color
+# from sklearn_lvq.glvq.plot_2d import to_tango_colors
+# from sklearn_lvq.glvq.plot_2d import plot2d
+from sklearn_lvq.glvq import GlvqModel
 from sklearn.utils import shuffle
 
 # DON'T USE AFTER GENERATOR CLASS IS WORKING
@@ -160,28 +161,28 @@ print("Number of positive values in Y_pred: {}".format(n_pos))
 # Gather indices based on classification
 
 # non-white | do not pay | classified positive
-log00_pos = np.logical_and(log00, Y_correct)
+log00_pos = np.logical_and(log00, Y_pred)
 # non-white | pay | classified positive
-log01_pos = np.logical_and(log01, Y_correct)
+log01_pos = np.logical_and(log01, Y_pred)
 n_pos = list(log00_pos).count(True)
 print("Number of positive values in log01_pos: {} of {}".format(n_pos, len(log01_pos)))
 # print(log00_pos)
 # white | do not pay | classified positive
-log10_pos = np.logical_and(log10, Y_correct)
+log10_pos = np.logical_and(log10, Y_pred)
 # white | pay | classified positive
-log11_pos = np.logical_and(log11, Y_correct)
+log11_pos = np.logical_and(log11, Y_pred)
 
 # ---
 
 # non-white | do not pay | classified negative
-log00_neg = np.logical_and(log00, np.logical_not(Y_correct))
+log00_neg = np.logical_and(log00, np.logical_not(Y_pred))
 # non-white | pay | classified negative
-log01_neg = np.logical_and(log01, np.logical_not(Y_correct))
+log01_neg = np.logical_and(log01, np.logical_not(Y_pred))
 
 # white| do not pay | classified negative
-log10_neg = np.logical_and(log10, np.logical_not(Y_correct))
+log10_neg = np.logical_and(log10, np.logical_not(Y_pred))
 # white | pay  | classified negative
-log11_neg = np.logical_and(log11, np.logical_not(Y_correct))
+log11_neg = np.logical_and(log11, np.logical_not(Y_pred))
 
 sum_log = list(log00_pos).count(True) + list(log01_pos).count(True) \
           + list(log10_pos).count(True) + list(log11_pos).count(True) \
@@ -201,69 +202,35 @@ color_1 = 'scarletred'
 color_pos = 'chocolate'
 
 # non-white: do not pay
-ax.scatter(X_full[log00_neg, 0], X_full[log00_neg, 1], c=tango_color(color_0, 0),
-           edgecolors=tango_color(color_0, 2), marker='o')
+ax.scatter(X_full[log00_neg, 0], X_full[log00_neg, 1], c=_tango_color(color_0, 0),
+           edgecolors=_tango_color(color_0, 2), marker='o')
 # non-white: pay
-ax.scatter(X_full[log01_neg, 0], X_full[log01_neg, 1], c=tango_color(color_0, 0),
-           edgecolors=tango_color(color_0, 2), marker='o')
+ax.scatter(X_full[log01_neg, 0], X_full[log01_neg, 1], c=_tango_color(color_0, 0),
+           edgecolors=_tango_color(color_0, 2), marker='o')
 # white: do not pay
-ax.scatter(X_full[log10_neg, 0], X_full[log10_neg, 1], c=tango_color(color_1, 0),
-           edgecolors=tango_color(color_1, 2), marker='s')
+ax.scatter(X_full[log10_neg, 0], X_full[log10_neg, 1], c=_tango_color(color_1, 0),
+           edgecolors=_tango_color(color_1, 2), marker='s')
 # white: pay
-ax.scatter(X_full[log11_neg, 0], X_full[log11_neg, 1], c=tango_color(color_1, 0),
-           edgecolors=tango_color(color_1, 2), marker='s')
+ax.scatter(X_full[log11_neg, 0], X_full[log11_neg, 1], c=_tango_color(color_1, 0),
+           edgecolors=_tango_color(color_1, 2), marker='s')
 
 # non-white: do not pay
-ax.scatter(X_full[log00_pos, 0], X_full[log00_pos, 1], c=tango_color(color_pos, 0),
-           edgecolors=tango_color(color_0, 2), marker='o')
+ax.scatter(X_full[log00_pos, 0], X_full[log00_pos, 1], c=_tango_color(color_pos, 0),
+           edgecolors=_tango_color(color_0, 2), marker='o')
 # non-white: pay
-ax.scatter(X_full[log01_pos, 0], X_full[log01_pos, 1], c=tango_color(color_pos, 0),
-           edgecolors=tango_color(color_0, 2), marker='o')
+ax.scatter(X_full[log01_pos, 0], X_full[log01_pos, 1], c=_tango_color(color_pos, 0),
+           edgecolors=_tango_color(color_0, 2), marker='o')
 # white: do not pay
-ax.scatter(X_full[log10_pos, 0], X_full[log10_pos, 1], c=tango_color(color_pos, 0),
-           edgecolors=tango_color(color_1, 2), marker='s')
+ax.scatter(X_full[log10_pos, 0], X_full[log10_pos, 1], c=_tango_color(color_pos, 0),
+           edgecolors=_tango_color(color_1, 2), marker='s')
 # white: pay
-ax.scatter(X_full[log11_pos, 0], X_full[log11_pos, 1], c=tango_color(color_pos, 0),
-           edgecolors=tango_color(color_1, 2), marker='s')
+ax.scatter(X_full[log11_pos, 0], X_full[log11_pos, 1], c=_tango_color(color_pos, 0),
+           edgecolors=_tango_color(color_1, 2), marker='s')
 
 
-
-# # non-white: do not pay
-# ax.scatter(X_full[log00, 0], X_full[log00, 1], c=tango_color(color_0, 0),
-#            edgecolors=tango_color(color_0, 2), marker='o')
-# # non-white: pay
-# ax.scatter(X_full[log01, 0], X_full[log01, 1], c=tango_color(color_pay, 0),
-#            edgecolors=tango_color(color_0, 2), marker='o')
-# # white: do not pay
-# ax.scatter(X_full[log10, 0], X_full[log10, 1], c=tango_color(color_1, 0),
-#            edgecolors=tango_color(color_1, 2), marker='s')
-# # white: pay
-# ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color(color_pay, 0),
-#            edgecolors=tango_color(color_1, 2), marker='s')
-
-
-# ax.scatter(X_full[log00, 0], X_full[log00, 1], c=tango_color(color_0, 0), edgecolors=tango_color(color_0, 2), marker='o')
-# ax.scatter(X_full[log01, 0], X_full[log01, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='o')
-# ax.scatter(X_full[log10, 0], X_full[log10, 1], c=tango_color(color_0, 0), edgecolors=tango_color(color_0, 2), marker='s')
-# ax.scatter(X_full[log11, 0], X_full[log11, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='s')
-
-
-ax.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color(color_0, 1),
-           edgecolors=tango_color(color_0, 2), linewidths=2, s=150, marker='D')
-ax.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color(color_1, 1),
-           edgecolors=tango_color(color_1, 2), linewidths=2, s=150, marker='D')
+ax.scatter(model.w_[0, 0], model.w_[0, 1], c=_tango_color(color_0, 1),
+           edgecolors=_tango_color(color_0, 2), linewidths=2, s=150, marker='D')
+ax.scatter(model.w_[1, 0], model.w_[1, 1], c=_tango_color(color_1, 1),
+           edgecolors=_tango_color(color_1, 2), linewidths=2, s=150, marker='D')
 plt.show()
 
-
-# # Plot the data and the prototypes as well
-# fig = plt.figure()
-# fig.canvas.set_window_title("LVQ with continuous distance to city center")
-# ax  = fig.add_subplot(111)
-# ax.set_xlabel("Distance from City Center")
-# ax.set_ylabel("Income")
-#
-# ax.scatter(X_urban[:, 0], X_urban[:, 1], c=tango_color('butter', 0), edgecolors=tango_color('butter', 2), marker='o')
-# ax.scatter(X_suburb[:, 0], X_suburb[:, 1], c=tango_color(color_1, 0), edgecolors=tango_color(color_1, 2), marker='o')
-#
-#
-# plt.show()

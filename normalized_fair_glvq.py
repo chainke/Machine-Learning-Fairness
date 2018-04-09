@@ -233,7 +233,8 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
             return mu_sum
 
         error_normal = mu_sum / len(training_data)
-        error_fairness = self.alpha * normalized_mean_difference(protected_labels, nr_protected_group, dist, self.beta) ** 2
+        error_fairness = self.alpha * (normalized_mean_difference(protected_labels, nr_protected_group, dist,
+                                                                 self.beta) ** 2)
         return error_normal + error_fairness
 
     def _validate_train_parms(self, train_set, train_lab):
@@ -331,10 +332,14 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
                 dist_protected.append(dist[i])
                 data_protected.append(data[i])
 
-        dw0 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 0) - self.dwi_mean_difference(
-            nr_unprotected, dist_unprotected, data_unprotected, 0)
-        dw1 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 1) - self.dwi_mean_difference(
-            nr_unprotected, dist_unprotected, data_unprotected, 1)
+        dw0 = self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 0) - self.dwi_mean_difference(nr_protected,
+                                                                                              dist_protected,
+                                                                                              data_protected, 0)
+        dw1 = self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 1) - self.dwi_mean_difference(nr_protected,
+                                                                                              dist_protected,
+                                                                                              data_protected, 1)
         return [dw0, dw1]
 
     def dwi_mean_difference(self, nr_data, dist, data, wi):
@@ -387,7 +392,7 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
 
         min_index, min_value = minimum_norm(sum_phi, m, nr_protected)
         dwi_min = self.gradient_minimum(dist, data, nr_protected, min_index)
-        mean_diff = mean_difference(protected_labels,nr_protected, dist, self.beta)
+        mean_diff = mean_difference(protected_labels, nr_protected, dist, self.beta)
         dwi_mean_diff = self.gradient_mean_difference(protected_labels, dist, data)
 
         dw0 = (dwi_mean_diff[0] * min_value - mean_diff * dwi_min[0]) / (min_value ** 2)

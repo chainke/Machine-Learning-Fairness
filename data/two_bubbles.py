@@ -206,10 +206,10 @@ ax.scatter(X_full[log00_neg, 0], X_full[log00_neg, 1], c=_tango_color(color_0, 0
            edgecolors=_tango_color(color_0, 2), marker='o')
 # non-white: pay
 ax.scatter(X_full[log01_neg, 0], X_full[log01_neg, 1], c=_tango_color(color_0, 0),
-           edgecolors=_tango_color(color_0, 2), marker='o')
+           edgecolors=_tango_color(color_0, 2), marker='s')
 # white: do not pay
 ax.scatter(X_full[log10_neg, 0], X_full[log10_neg, 1], c=_tango_color(color_1, 0),
-           edgecolors=_tango_color(color_1, 2), marker='s')
+           edgecolors=_tango_color(color_1, 2), marker='o')
 # white: pay
 ax.scatter(X_full[log11_neg, 0], X_full[log11_neg, 1], c=_tango_color(color_1, 0),
            edgecolors=_tango_color(color_1, 2), marker='s')
@@ -219,10 +219,10 @@ ax.scatter(X_full[log00_pos, 0], X_full[log00_pos, 1], c=_tango_color(color_pos,
            edgecolors=_tango_color(color_0, 2), marker='o')
 # non-white: pay
 ax.scatter(X_full[log01_pos, 0], X_full[log01_pos, 1], c=_tango_color(color_pos, 0),
-           edgecolors=_tango_color(color_0, 2), marker='o')
+           edgecolors=_tango_color(color_0, 2), marker='s')
 # white: do not pay
 ax.scatter(X_full[log10_pos, 0], X_full[log10_pos, 1], c=_tango_color(color_pos, 0),
-           edgecolors=_tango_color(color_1, 2), marker='s')
+           edgecolors=_tango_color(color_1, 2), marker='o')
 # white: pay
 ax.scatter(X_full[log11_pos, 0], X_full[log11_pos, 1], c=_tango_color(color_pos, 0),
            edgecolors=_tango_color(color_1, 2), marker='s')

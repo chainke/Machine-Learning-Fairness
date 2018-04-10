@@ -110,11 +110,12 @@ def grlvq_fit(X, y, feature):
 
     """
 
-    weights = compute_vector_weights(feature,y,X)
+    weights = normalize_weights(compute_vector_weights(feature,y,X))
 
-    #weights_processed = skip_smallest_weight(weights)
+
+    weights_processed = skip_smallest_weight(weights)
     #weights_processed = skip_weights_under_threshold(weights, 0.129)
-    weights_processed = skip_weights_under_threshold(weights, 0.134)
+    #weights_processed = skip_weights_under_threshold(weights, 0.134)
 
 
     # start classification
@@ -128,6 +129,8 @@ def grlvq_fit(X, y, feature):
 def weighted_preprocessing(X, y, feature):
     weights = compute_vector_weights(feature, y, X)
 
+    normalized_weights = normalize_weights(weights)
+
     newX = X
 
     # multiply the weight to the corresponding feature for each point:
@@ -139,7 +142,7 @@ def weighted_preprocessing(X, y, feature):
             # multiply the weights to the features of the data point
             # but leave out the protected feature since its weight is 0
             if(weights[j] != 0):
-                processed_point[j] *= weights[j]
+                processed_point[j] *= normalized_weights[j]
 
 
         # add data point to new x
@@ -148,6 +151,14 @@ def weighted_preprocessing(X, y, feature):
     return newX
 
 
+def normalize_weights(weights):
+    sum_of_weights = np.sum(weights)
+
+    normalized_weights = weights
+    for i in range(len(weights)):
+        normalized_weights[i] = weights[i] / sum_of_weights
+
+    return weights
 
 def skip_smallest_weight(weights):
     smallest_weight = 1
@@ -159,7 +170,7 @@ def skip_smallest_weight(weights):
             smallest_weight = weights[i]
             weight_index = i
 
-    print("eliminated smallest weight '%f' at position '%d'" % (smallest_weight, weight_index))
+    print("eliminated smallest weight '%f' for feature '%d'" % (smallest_weight, weight_index))
 
     weights_processed = weights
     weights_processed[weight_index] = 0.0
@@ -177,7 +188,7 @@ def skip_weights_under_threshold(weights, threshold):
     # eliminate all weights that are too small 
     for i in range(len(weights)):
         if(weights[i] != 0.0 and weights[i] < threshold):
-            print("eliminated weight '%f' under threshold '%f' at position '%d'" % (weights_processed[i], threshold, i))
+            print("eliminated weight '%f' under threshold '%f' for feature '%d'" % (weights_processed[i], threshold, i))
             weights_processed[i] = 0.0
 
     print("weights: ", str(weights_processed))

@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn_lvq.utils import _tango_color
 
-from glvq.plot_2d import to_tango_colors
-from glvq.plot_2d import plot2d
+from GLVQ.plot_2d import to_tango_colors
+from GLVQ.plot_2d import plot2d
 
 from sklearn.utils import shuffle
 from sklearn_lvq.glvq import GlvqModel

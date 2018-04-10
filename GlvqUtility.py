@@ -15,13 +15,13 @@ def squared_euclidean(a, b=None):
 
 class GlvqUtility:
 
-    def __init__(self, glvq_model):
-        self.random_state = glvq_model.random_state
-        self.initial_prototypes = glvq_model.initial_prototypes
-        self.prototypes_per_class = glvq_model.prototypes_per_class
-        self.display = glvq_model.display
-        self.max_iter = glvq_model.max_iter
-        self.gtol = glvq_model.gtol
+    def __init__(self, lvq_model):
+        self.random_state = lvq_model.random_state
+        self.initial_prototypes = lvq_model.initial_prototypes
+        self.prototypes_per_class = lvq_model.prototypes_per_class
+        self.display = lvq_model.display
+        self.max_iter = lvq_model.max_iter
+        self.gtol = lvq_model.gtol
 
     def validate_train_parms(self, train_set, train_lab):
         random_state = validation.check_random_state(self.random_state)

@@ -158,7 +158,8 @@ def normalize_weights(weights):
     for i in range(len(weights)):
         normalized_weights[i] = weights[i] / sum_of_weights
 
-    return weights
+    print("normalized weights: ", str(normalized_weights))
+    return normalized_weights
 
 def skip_smallest_weight(weights):
     smallest_weight = 1

@@ -1,25 +1,45 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from fair_glvq import GlvqModel
+from fair_glvq import MeanDiffGlvqModel
 from GLVQ.plot_2d import to_tango_colors, tango_color
+
+
+def split_x(x, dim_protected):
+    protected = []
+    new_x = []
+
+    for i in range(0, len(x)):
+        protected.append(x[i][dim_protected])
+        new_x.append(
+            x[i][:dim_protected] + x[i][dim_protected + 1:]
+        )
+
+    return new_x, protected
+
 
 print(__doc__)
 
 nb_ppc = 100
-print('GLVQ:')
+print('Fair GLVQ:')
 
 # generate random data
 # TODO: use unfair data
 toy_data = np.append(
     np.random.multivariate_normal([0, 0], np.eye(2) / 2, size=nb_ppc),
-    np.random.multivariate_normal([5, 0], np.eye(2) / 2, size=nb_ppc), axis=0)
+    np.random.multivariate_normal([5, 0], np.eye(2) / 2, size=nb_ppc),axis=0)
 toy_label = np.append(np.zeros(nb_ppc), np.ones(nb_ppc), axis=0)
+toy_protected_labels = np.append(np.zeros(nb_ppc), np.ones(nb_ppc))  #np.random.randint(2, size=2*nb_ppc)
+print(len(toy_protected_labels))
+print(len(toy_data))
+
+weights = 'uniform'
 
 # model fitting
 # TODO: add platt scaling
-glvq = GlvqModel()
-glvq.fit(toy_data, toy_label)
+glvq = MeanDiffGlvqModel(1)
+# glvq.fit(new_x, y, protected_labels)
+glvq.fit(toy_data, toy_label, toy_protected_labels)
 pred = glvq.predict(toy_data)
 
 # plotting

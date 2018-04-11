@@ -9,7 +9,7 @@ from glvq.plot_2d import plot2d
 
 from sklearn.utils import shuffle
 from sklearn_lvq.glvq import GlvqModel
-from fair_glvq import MeanDiffGlvqModel as FairGlvqModel
+from quad_fair_glvq import MeanDiffGlvqModel as FairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
 

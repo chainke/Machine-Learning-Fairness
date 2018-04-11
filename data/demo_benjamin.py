@@ -9,7 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from GLVQ.plot_2d import tango_color
 from sklearn_lvq.glvq import GlvqModel
-from fair_glvq import MeanDiffGlvqModel as FairGlvqModel
+from abs_fair_glvq import MeanDiffGlvqModel as absolutFairGlvqModel
+from quad_fair_glvq import MeanDiffGlvqModel as quadraticFairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
@@ -49,8 +50,8 @@ p1 = 0.5
 q = 0.5
 
 # fairness factor
-alpha1 = 100
-alpha2 = 100
+alpha1 = 1000
+alpha2 = 1000
 # generate a vector C denoting the racial information
 C = np.zeros(m, dtype=bool)
 m0 = int(m * q)
@@ -134,11 +135,11 @@ def getTrainedModel():
 
 
 protected_label = getProtected()
-fair_model = FairGlvqModel(alpha1)
+fair_model = quadraticFairGlvqModel(alpha1)
 fair_model.fit_fair(X, Y, protected_label)
 
 
-norm_fair_model = NormFairGlvqModel(alpha2)
+norm_fair_model = absolutFairGlvqModel(alpha2)
 norm_fair_model.fit_fair(X, Y, protected_label)
 
 # Check some fairness measures
@@ -179,7 +180,7 @@ norm_fair_D = norm_fair_model._compute_distance(X)
 fff = np.divide(norm_fair_D[:, 0] - D[:, 1], norm_fair_D[:, 0] + norm_fair_D[:, 1])
 fff = np.divide(np.ones(m), 1 + np.exp(-fff))
 
-print('[fair] mean difference: {}'.format(np.mean(ff[C]) - np.mean(ff[np.logical_not(C)])))
+print('[quad fair] mean difference: {}'.format(np.mean(ff[C]) - np.mean(ff[np.logical_not(C)])))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified
@@ -193,8 +194,8 @@ print('fraction of whites who would not pay their money back but get a good scor
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(
     np.mean(np.not_equal(fair_Y_predicted[log11], Y[log11]))))
 
-
-print('[norm fair] mean difference: {}'.format(np.mean(fff[C]) - np.mean(fff[np.logical_not(C)])))
+print(' ')
+print('[abs fair] mean difference: {}'.format(np.mean(fff[C]) - np.mean(fff[np.logical_not(C)])))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified

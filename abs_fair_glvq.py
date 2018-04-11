@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Author: Joris Jensen <jjensen@techfak.uni-bielefeld.de>
 #
 # License: BSD 3 clause
@@ -7,11 +9,11 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
-from quad_fair_glvq import mean_difference
+
+from itertools import product
 from sklearn.utils import validation
 from sklearn.utils.validation import check_is_fitted
-import operator
-from itertools import product
+
 from sklearn_lvq.lvq import _LvqBaseModel
 
 
@@ -25,47 +27,30 @@ def _squared_euclidean(a, b=None):
     return np.maximum(d, 0)
 
 
-def normalized_mean_difference(protected_labels, nr_protected, dist, beta):
-    m = len(protected_labels)
-    sgd_unprotected, sgd_protected = fairness_phi(protected_labels, dist, beta)
-    min_index, min_value = minimum_norm(sgd_protected + sgd_unprotected, m, nr_protected)
-    norm_mean_difference = (sgd_unprotected / (m - nr_protected) - sgd_protected / nr_protected) / min_value
-    return norm_mean_difference
+def sgd(x, beta):
+    return 1 / (1 + np.exp(- beta*x))
 
 
-def minimum_norm(sum_phi, m, nr_protected):
-    values = [(sum_phi / m) / (1 - nr_protected / m), (1 - sum_phi / m) / (nr_protected / m)]
-
-    if values[0] == values[1]:
-        min_index = 2
-        min_value = values[0]
-    else:
-        min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
-    return min_index, min_value
+def dsgd(x, beta):
+    return beta*np.exp(-beta*x) / ((np.exp(-beta*x) + 1) ** 2)
 
 
-def fairness_phi(protected_labels, dist, beta):
-    phi_protected_group = 0
-    phi_unprotected_group = 0
+def mean_difference(protected_labels, nr_protected_group, dist, beta):
+    nr_non_protected_group = len(protected_labels) - nr_protected_group
+    sgd_positive_class = 0
+    sgd_negative_class = 0
     for i in range(0, len(protected_labels)):
         d0 = dist[i][0]
         d1 = dist[i][1]
         mu = sgd((d0 - d1) / (d0 + d1), beta)
-        phi_protected_group += protected_labels[i] * mu
-        phi_unprotected_group += (1 - protected_labels[i]) * mu
-    return phi_unprotected_group, phi_protected_group
+        sgd_positive_class += protected_labels[i] * mu
+        sgd_negative_class += (1 - protected_labels[i]) * mu
+
+    fairnessdiff = sgd_positive_class / nr_protected_group - sgd_negative_class / nr_non_protected_group
+    return fairnessdiff
 
 
-def sgd(x, beta):
-    return 1 / (1 + np.exp(-beta * x))
-
-
-def dsgd(x, beta):
-    return beta * np.exp(-beta * x) / ((np.exp(-beta * x) + 1) ** 2)
-
-
-# =============================================================================================================
-class NormMeanDiffGlvqModel(_LvqBaseModel):
+class MeanDiffGlvqModel(_LvqBaseModel):
     """Generalized Learning Vector Quantization
 
     Parameters
@@ -132,10 +117,10 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
     def __init__(self, alpha=0, prototypes_per_class=1, initial_prototypes=None,
                  max_iter=2500, gtol=1e-5, beta=2, C=None,
                  display=False, random_state=None):
-        super(NormMeanDiffGlvqModel, self).__init__(prototypes_per_class=prototypes_per_class,
-                                                    initial_prototypes=initial_prototypes,
-                                                    max_iter=max_iter, gtol=gtol, display=display,
-                                                    random_state=random_state)
+        super(MeanDiffGlvqModel, self).__init__(prototypes_per_class=prototypes_per_class,
+                                                initial_prototypes=initial_prototypes,
+                                                max_iter=max_iter, gtol=gtol, display=display,
+                                                random_state=random_state)
         self.beta = beta
         self.c = C
         self.alpha = alpha
@@ -159,7 +144,7 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
 
         """
         return self.beta * np.exp(self.beta * x) / (
-                                                       1 + np.exp(self.beta * x)) ** 2
+                1 + np.exp(self.beta * x)) ** 2
 
     def _optgrad(self, variables, training_data, label_equals_prototype,
                  random_state, protected_labels, nr_protected_group):
@@ -183,8 +168,8 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
         distcorectminuswrong = distcorrect - distwrong
         mu = distcorectminuswrong / distcorrectpluswrong
 
-        fair_diff = normalized_mean_difference(protected_labels, nr_protected_group, dist, self.beta)
-        fair_dw = self.gradient_norm_mean_difference(protected_labels, dist, training_data)
+        fair_diff = mean_difference(protected_labels, nr_protected_group, dist, self.beta)
+        fair_dw = self.gradient_mean_difference(protected_labels, dist, training_data)
         distcorrectpluswrong = 4 / distcorrectpluswrong ** 2
 
         mu = np.vectorize(self.phi_prime)(mu)
@@ -199,7 +184,11 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
             g[i] = dcd.dot(training_data[idxw]) - dwd.dot(
                 training_data[idxc]) + (dwd.sum(0) -
                                         dcd.sum(0)) * prototypes[i]
-            g[i] += self.alpha * 2 * fair_diff * fair_dw[i]
+
+            if fair_diff > 0.001:
+                g[i] += self.alpha * fair_diff / abs(fair_diff) * fair_dw[i]
+            else:
+                g[i] += self.alpha * 2 * fair_diff * fair_dw[i]
 
         g[:nb_prototypes] = 1 / n_data * g[:nb_prototypes]
         g = g * (1 + 0.0001 * random_state.rand(*g.shape) - 0.5)
@@ -233,15 +222,18 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
             return mu_sum
 
         error_normal = mu_sum / len(training_data)
-        error_fairness = self.alpha * (normalized_mean_difference(protected_labels, nr_protected_group, dist,
-                                                                 self.beta) ** 2)
+        mean_diff = mean_difference(protected_labels, nr_protected_group, dist, self.beta)
+        if mean_diff > 0.001:
+            error_fairness = self.alpha * abs(mean_diff)
+        else:
+            error_fairness = self.alpha * (mean_diff ** 2)
         return error_normal + error_fairness
 
     def _validate_train_parms(self, train_set, train_lab):
         if not isinstance(self.beta, int):
             raise ValueError("beta must a an integer")
 
-        ret = super(NormMeanDiffGlvqModel, self)._validate_train_parms(train_set, train_lab)
+        ret = super(MeanDiffGlvqModel, self)._validate_train_parms(train_set, train_lab)
 
         self.c_ = np.ones((self.c_w_.size, self.c_w_.size))
         if self.c is not None:
@@ -257,7 +249,7 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
 
     def _optimize(self, x, y, protected_labels, random_state):
         label_equals_prototype = y[np.newaxis].T == self.c_w_
-        nr_protected_group = sum(protected_labels, 0)
+        nr_protected_group = sum(protected_labels,0)
         res = minimize(
             fun=lambda vs: self._optfun(
                 variables=vs, training_data=x,
@@ -331,15 +323,10 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
             else:
                 dist_protected.append(dist[i])
                 data_protected.append(data[i])
-
-        dw0 = self.dwi_mean_difference(
-            nr_unprotected, dist_unprotected, data_unprotected, 0) - self.dwi_mean_difference(nr_protected,
-                                                                                              dist_protected,
-                                                                                              data_protected, 0)
-        dw1 = self.dwi_mean_difference(
-            nr_unprotected, dist_unprotected, data_unprotected, 1) - self.dwi_mean_difference(nr_protected,
-                                                                                              dist_protected,
-                                                                                              data_protected, 1)
+        dw0 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 0) - self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 0)
+        dw1 = self.dwi_mean_difference(nr_protected, dist_protected, data_protected, 1) - self.dwi_mean_difference(
+            nr_unprotected, dist_unprotected, data_unprotected, 1)
         return [dw0, dw1]
 
     def dwi_mean_difference(self, nr_data, dist, data, wi):
@@ -379,47 +366,3 @@ class NormMeanDiffGlvqModel(_LvqBaseModel):
                              "expected=%d" % (self.w_.shape[1], x.shape[1]))
         dist = self._compute_distance(x)
         return (self.c_w_[dist.argmin(1)])
-
-    # =============================================================================================================
-    # protected lables 1 = in protected class
-
-    def gradient_norm_mean_difference(self, protected_labels, dist, data):
-        m = len(protected_labels)
-        nr_protected = sum(protected_labels)
-
-        sgd_unprotected, sgd_protected = fairness_phi(protected_labels, dist, self.beta)
-        sum_phi = sgd_protected + sgd_unprotected
-
-        min_index, min_value = minimum_norm(sum_phi, m, nr_protected)
-        dwi_min = self.gradient_minimum(dist, data, nr_protected, min_index)
-        mean_diff = mean_difference(protected_labels, nr_protected, dist, self.beta)
-        dwi_mean_diff = self.gradient_mean_difference(protected_labels, dist, data)
-
-        dw0 = (dwi_mean_diff[0] * min_value - mean_diff * dwi_min[0]) / (min_value ** 2)
-        dw1 = (dwi_mean_diff[1] * min_value - mean_diff * dwi_min[1]) / (min_value ** 2)
-
-        return [dw0, dw1]
-
-    # We normalize through min(A,B) and therefore need the partial derivatives of A, B, and 1/2(A+B).
-    # The following methods compute the derivatives.
-
-    def dwi_minimum_a(self, dist, data, nr_protected, wi):
-        m = len(data)
-        dwi_min_a = self.dwi_mean_difference(1, dist, data, wi) / (m - nr_protected)
-        return dwi_min_a
-
-    def dwi_minimum_b(self, dist, data, nr_protected, wi):
-        dwi_min_b = -self.dwi_mean_difference(1, dist, data, wi) / nr_protected
-        return dwi_min_b
-
-    def gradient_minimum(self, dist, data, nr_protected, case):
-        dwi_min = []
-        for i in range(0, 2):
-            if case == 0:
-                dwi_min.append(self.dwi_minimum_a(dist, data, nr_protected, i))
-            if case == 1:
-                dwi_min.append(self.dwi_minimum_b(dist, data, nr_protected, i))
-            else:
-                dwi_min.append(0.5 * (self.dwi_minimum_a(dist, data, nr_protected, i)
-                                      + self.dwi_minimum_b(dist, data, nr_protected, i)))
-        return dwi_min

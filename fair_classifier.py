@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Data_Generata
 
-from fair_glvq import MeanDiffGlvqModel
+from quad_fair_glvq import MeanDiffGlvqModel
 from GLVQ.plot_2d import to_tango_colors, tango_color
 
 

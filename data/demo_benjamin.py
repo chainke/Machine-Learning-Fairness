@@ -9,8 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from GLVQ.plot_2d import tango_color
 from sklearn_lvq.glvq import GlvqModel
-from fair_glvq import MeanDiffGlvqModel as FairGlvqModel
+from abs_fair_glvq import MeanDiffGlvqModel as absolutFairGlvqModel
+from quad_fair_glvq import MeanDiffGlvqModel as quadraticFairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
+
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
 # has the purpose to predict how likely it is that customers will pay back their debt.
@@ -49,8 +51,8 @@ p1 = 0.5
 q = 0.5
 
 # fairness factor
-alpha1 = 100
-alpha2 = 100
+alpha1 = 200
+alpha2 = 200
 # generate a vector C denoting the racial information
 C = np.zeros(m, dtype=bool)
 m0 = int(m * q)
@@ -111,6 +113,7 @@ print('fraction of whites who would not pay their money back but get a good scor
     np.mean(np.not_equal(Y_predicted[log10], Y[log10]))))
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(
     np.mean(np.not_equal(Y_predicted[log11], Y[log11]))))
+print('accuracy of the classifier:   ' + str(model.score(X, Y)))
 
 
 def getData():
@@ -134,7 +137,7 @@ def getTrainedModel():
 
 
 protected_label = getProtected()
-fair_model = FairGlvqModel(alpha1)
+fair_model = quadraticFairGlvqModel(alpha1)
 fair_model.fit_fair(X, Y, protected_label)
 
 
@@ -144,26 +147,10 @@ norm_fair_model.fit_fair(X, Y, protected_label)
 # Check some fairness measures
 fair_Y_predicted = fair_model.predict(X)
 
-counter = 0
-for i in range(len(Y_predicted)):
-    if fair_Y_predicted[i] != Y_predicted[i]:
-        print("fair: " + str(fair_Y_predicted[i]))
-        print("normal: " + str(Y_predicted[i]))
-        counter = counter + 1
-
-print("number of different outcomes in just fair: " + str(counter))
-
 # Check some fairness measures
 norm_fair_Y_predicted = norm_fair_model.predict(X)
 
-counter = 0
-for i in range(len(Y_predicted)):
-    if norm_fair_Y_predicted[i] != Y_predicted[i]:
-        print("fair: " + str(norm_fair_Y_predicted[i]))
-        print("normal: " + str(Y_predicted[i]))
-        counter = counter + 1
 
-print("number of different outcomes in normalized fair: " + str(counter))
 
 # Compute the mean difference, that is, the difference between the average credit score for
 # whites and non-whites
@@ -192,8 +179,9 @@ print('fraction of whites who would not pay their money back but get a good scor
     np.mean(np.not_equal(fair_Y_predicted[log10], Y[log10]))))
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(
     np.mean(np.not_equal(fair_Y_predicted[log11], Y[log11]))))
+print('accuracy of the classifier:   ' + str(fair_model.score(X, Y)))
 
-
+print(' ')
 print('[norm fair] mean difference: {}'.format(np.mean(fff[C]) - np.mean(fff[np.logical_not(C)])))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
@@ -207,7 +195,7 @@ print('fraction of whites who would not pay their money back but get a good scor
     np.mean(np.not_equal(norm_fair_Y_predicted[log10], Y[log10]))))
 print('fraction of whites who would pay their money back but get a bad score: {}'.format(
     np.mean(np.not_equal(norm_fair_Y_predicted[log11], Y[log11]))))
-
+print('accuracy of the classifier:   ' + str(norm_fair_model.score(X, Y)))
 # ax1  = fig.add_subplot(111)
 f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
 # Plot the data and the prototypes as well

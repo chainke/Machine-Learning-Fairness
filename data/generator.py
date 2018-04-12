@@ -170,7 +170,7 @@ class DataGen:
 
     # TODO: handle Y_pred = None
     # TODO: Add some way to use the model to plot prototypes
-    def prepare_plot(self, X, C, Y, Y_pred=None):
+    def prepare_plot(self, X, C, Y, Y_pred = None, prototypes=None):
         """
             Generated plot information for a given data set with given classification.
 
@@ -187,6 +187,9 @@ class DataGen:
 
             Y_pred: np.array of bool
                 Array containing all data point predicted outcomes.
+
+            prototypes: np.ndarray of floats
+                Array of prototype locations.
 
             Returns
             -------
@@ -285,7 +288,11 @@ class DataGen:
             # white: pay
             ax.scatter(X[log11_pos, 0], X[log11_pos, 1], c=_tango_color(self.color_pos, 0),
                        edgecolors=_tango_color(self.color_1, 2), marker='s')
-
+            if prototypes is not None:
+                ax.scatter(prototypes[0, 0], prototypes[0, 1], c=_tango_color(self.color_0, 1),
+                           edgecolors=_tango_color(self.color_0, 2), linewidths=2, s=150, marker='D')
+                ax.scatter(prototypes[1, 0], prototypes[1, 1], c=_tango_color(self.color_1, 1),
+                           edgecolors=_tango_color(self.color_1, 2), linewidths=2, s=150, marker='D')
         return ax
 
     def plot_prepared_dist(self, ax):
@@ -301,7 +308,7 @@ class DataGen:
         plt.show()
         return
 
-    def plot_dist(self, X, C, Y, Y_pred):
+    def plot_dist(self, X, C, Y, Y_pred, prototypes=None):
         """
             Prints classification of a given data set.
 
@@ -318,8 +325,12 @@ class DataGen:
 
             Y_pred: np.array of bool
                 Array containing all data point predicted outcomes.
+
+            prototypes: np.ndarray of floats
+                Array of prototype locations.
+
         """
-        ax = self.prepare_plot(X, C, Y, Y_pred)
+        ax = self.prepare_plot(X, C, Y, Y_pred, prototypes)
         self.plot_prepared_dist(ax)
         return
 
@@ -350,5 +361,5 @@ class DataGen:
             n_pos = list(Y_pred).count(True)
             print("Number of positive values in Y_pred: {}".format(n_pos))
             
-        self.plot_dist(X, C, Y, Y_pred)
+        self.plot_dist(X, C, Y, Y_pred, model.w_)
         return

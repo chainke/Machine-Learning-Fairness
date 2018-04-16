@@ -13,7 +13,6 @@ from quad_fair_glvq import MeanDiffGlvqModel as FairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
 
-# TODO: WORK IN PROGRESS
 class DataGen:
 
     def __init__(self, verbose=False):
@@ -173,6 +172,8 @@ class DataGen:
                              proportion_0_pay, proportion_1_pay, std):
         """
             Generates data set around two bubbles (normal distributions).
+            Important:  The second feature is still used for shift and to determine
+                        the membership of the protected variable C.
 
             Parameters
             ----------
@@ -226,23 +227,25 @@ class DataGen:
             print("Total number of people in suburban neighbourhoods: \t{}".format(m_suburb))
             print("----")
 
-        for dim in range(len(std)):
-            if dim == 0:
-                X_urban = np.random.randn(m_urban) * std[dim]
-            else:
-                X_urban = np.concatenate((X_urban, np.random.randn(m_urban) * std[dim]), axis=1)
-
-        for dim in range(len(std)):
-            if dim == 0:
-                X_suburb = np.random.randn(m_suburb) * std[dim]
-            else:
-                X_suburb = np.concatenate((X_suburb, np.random.randn(m_suburb) * std[dim]), axis=1)
-
         # X_urban = np.random.randn(m_urban, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
+        for dim in range(len(std)):
+            if dim == 0:
+                X_urban = np.random.randn(m_urban, 1) * std[dim]
+            else:
+                X_urban = np.concatenate((X_urban, np.random.randn(m_urban, 1) * std[dim]), axis=1)
+
         # X_suburb = np.random.randn(m_suburb, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
+        for dim in range(len(std)):
+            if dim == 0:
+                X_suburb = np.random.randn(m_suburb, 1) * std[dim]
+            else:
+                X_suburb = np.concatenate((X_suburb, np.random.randn(m_suburb, 1) * std[dim]), axis=1)
+
 
         # shift suburban population
-        X_suburb += np.array([1, 0])
+        shift = np.zeros(len(std))
+        shift[0] = 1
+        X_suburb += shift
 
         # sort data points in both sets by feature 1
         X_urban_sorted = sorted(X_urban, key=lambda x: x[1], reverse=False)
@@ -307,8 +310,6 @@ class DataGen:
 
         return X_full, C_full, Y_full
 
-    # TODO: handle Y_pred = None
-    # TODO: Add some way to use the model to plot prototypes
     def prepare_plot(self, X, C, Y, Y_pred = None, prototypes=None):
         """
             Generated plot information for a given data set with given classification.

@@ -34,10 +34,7 @@ class DataGen:
         self.color_0 = 'skyblue'
         self.color_1 = 'scarletred'
         self.color_pos = 'chocolate'
-        
-        pass
 
-    # TODO: Add parameter to shift bubbles relative to each other
     def generate_two_bubbles(self, number_data_points, proportion_0, proportion_0_urban, proportion_1_urban,
                              proportion_0_pay, proportion_1_pay, std_feature_1=0.2, std_feature_2=0.2):
         """
@@ -73,99 +70,21 @@ class DataGen:
             -------
             r : float
                 measure of discrimination
-            X_full:
-            C_full:
-            Y_full:
+            X_full: np.array of float
+                Features of the generated data set.
+            C_full: np.array of bool
+                Class membership of the protected class.
+            Y_full: np.array of bool
+                Outcomes.
 
         """
 
-        # proportion of non-white people who do not pay their money back
-        proportion_0_dont_pay = 1 - proportion_0_pay
-        # proportion of white people who do not pay their money back
-        proportion_1_dont_pay = 1 - proportion_1_pay
+        std_array = np.array([std_feature_1, std_feature_2])
 
-        # proportion of non-white people in suburban neighbourhoods
-        proportion_0_suburban = 1 - proportion_0_urban
+        X, C, Y = self.generate_two_bubbles_multi_dim(number_data_points, proportion_0, proportion_0_urban,
+                                                      proportion_1_urban, proportion_0_pay, proportion_1_pay, std_array)
 
-        # number of people living in urban neighbourhoods
-        m_urban = int(number_data_points * (1 - proportion_0) * proportion_1_urban +
-                      number_data_points * proportion_0 * proportion_0_urban)
-        # number of people living in suburban neighbourhoods
-        m_suburb = number_data_points - m_urban
-        if self.verbose:
-            print("----")
-            print("Total number of people in urban neighbourhoods: \t{}".format(m_urban))
-            print("Total number of people in suburban neighbourhoods: \t{}".format(m_suburb))
-            print("----")
-
-        X_urban = np.random.randn(m_urban, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
-        X_suburb = np.random.randn(m_suburb, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
-
-        # shift suburban population
-        X_suburb += np.array([1, 0])
-
-        # sort data points in both sets
-        X_urban_sorted = sorted(X_urban, key=lambda x: x[1], reverse=False)
-
-        # generate a vector C denoting the racial information
-        C = [np.zeros(m_urban, dtype=bool)]
-
-        # number of all non-whites living in urban neighbourhoods
-        m0 = int(proportion_0_urban * proportion_0 * number_data_points)
-        C[0][m0:] = True
-
-        if self.verbose:
-            print("Number of \tnon-white \turban: \t\t{}".format(m0))
-            print("Number of \twhite \t\turban: \t\t{}".format(m_urban - m0))
-
-        X_suburb_sorted = sorted(X_suburb, key=lambda x: x[1], reverse=False)
-        C.append(np.zeros(m_suburb, dtype=bool))
-        # number of all non-whites living in suburban neighbourhoods
-        m1 = int(proportion_0_suburban * proportion_0 * number_data_points)
-        C[1][m1:] = True
-
-        if self.verbose:
-            print("Number of \tnon-white \tsuburban: \t{}".format(m1))
-            print("Number of \twhite \t\tsuburban: \t{}".format(m_suburb - m1))
-            print("----")
-
-        # generate a vector Y for urban area denoting the actual information about whether
-        # money was paid back or not
-        Y = [np.zeros(m_urban, dtype=bool)]
-        # set
-        m00 = int(m0 * proportion_0_dont_pay)
-        Y[0][m00:m0] = True
-        Y[0][:m0] = shuffle(Y[0][:m0])
-
-        m10 = int((m_urban - m0) * proportion_1_dont_pay)
-        Y[0][m0 + m10:] = True
-        Y[0][m0:] = shuffle(Y[0][m0:])
-
-        if self.verbose:
-            print("Number of \turban \t\tnon-white \tdo not pay\t(m00): {}".format(m00))
-            print("Number of \turban \t\twhite \t\tdo not pay\t(m10): {}".format(m10))
-
-        # generate a vector Y for suburban area denoting the actual information about whether
-        # money was paid back or not
-        Y.append(np.zeros(m_suburb, dtype=bool))
-        m00 = int(m1 * proportion_0_dont_pay)
-        Y[1][m00:m0] = True
-        Y[1][:m0] = shuffle(Y[1][:m0])
-
-        m10 = int((m_suburb - m1) * proportion_1_dont_pay)
-        Y[1][m0 + m10:] = True
-        Y[1][m0:] = shuffle(Y[1][m0:])
-
-        if self.verbose:
-            print("Number of \tsuburban \tnon-white \tdo not pay\t(m00): {}".format(m00))
-            print("Number of \tsuburban \twhite \t\tdo not pay\t(m10): {}".format(m10))
-            print("----")
-
-        X_full = np.concatenate((X_urban_sorted, X_suburb_sorted))
-        C_full = np.concatenate((C[0], C[1]))
-        Y_full = np.concatenate((Y[0], Y[1]))
-
-        return X_full, C_full, Y_full
+        return X, C, Y
 
     # NOT RUNNING YET!
     def generate_two_bubbles_multi_dim(self, number_data_points, proportion_0, proportion_0_urban, proportion_1_urban,
@@ -202,9 +121,13 @@ class DataGen:
             -------
             r : float
                 measure of discrimination
-            X_full:
-            C_full:
-            Y_full:
+                measure of discrimination
+            X_full: np.array of float
+                Features of the generated data set.
+            C_full: np.array of bool
+                Class membership of the protected class.
+            Y_full: np.array of bool
+                Outcomes.
 
         """
 

@@ -9,11 +9,11 @@ from glvq.plot_2d import plot2d
 
 from sklearn.utils import shuffle
 from sklearn_lvq.glvq import GlvqModel
+from sklearn.preprocessing import normalize
 from quad_fair_glvq import MeanDiffGlvqModel as FairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
 
-# TODO: WORK IN PROGRESS
 class DataGen:
 
     def __init__(self, verbose=False):
@@ -35,10 +35,7 @@ class DataGen:
         self.color_0 = 'skyblue'
         self.color_1 = 'scarletred'
         self.color_pos = 'chocolate'
-        
-        pass
 
-    # TODO: Add parameter to shift bubbles relative to each other
     def generate_two_bubbles(self, number_data_points, proportion_0, proportion_0_urban, proportion_1_urban,
                              proportion_0_pay, proportion_1_pay, std_feature_1=0.2, std_feature_2=0.2):
         """
@@ -74,9 +71,64 @@ class DataGen:
             -------
             r : float
                 measure of discrimination
-            X_full:
-            C_full:
-            Y_full:
+            X_full: np.array of float
+                Features of the generated data set.
+            C_full: np.array of bool
+                Class membership of the protected class.
+            Y_full: np.array of bool
+                Outcomes.
+
+        """
+
+        std_array = np.array([std_feature_1, std_feature_2])
+
+        X, C, Y = self.generate_two_bubbles_multi_dim(number_data_points, proportion_0, proportion_0_urban,
+                                                      proportion_1_urban, proportion_0_pay, proportion_1_pay, std_array)
+
+        return X, C, Y
+
+    # NOT RUNNING YET!
+    def generate_two_bubbles_multi_dim(self, number_data_points, proportion_0, proportion_0_urban, proportion_1_urban,
+                             proportion_0_pay, proportion_1_pay, std):
+        """
+            Generates data set around two bubbles (normal distributions).
+            Important:  The second feature is still used for shift and to determine
+                        the membership of the protected variable C.
+
+            Parameters
+            ----------
+            number_data_points: int
+                Size of the data set.
+
+            proportion_0: float in interval [0, 1]
+                Proportion of the protected subclass.
+
+            proportion_0_urban: float in interval [0, 1]
+                Proportion of the protected subclass in urban neighbourhoods.
+
+            proportion_1_urban: float in interval [0, 1]
+                Proportion of the un-protected subclass in urban neighbourhoods.
+
+            proportion_0_pay: float in interval [0, 1]
+                Proportion of the protected subclass that repays their credit.
+
+            proportion_1_pay: float in interval [0, 1]
+                Proportion of the un-protected subclass that repays their credit.
+
+            std: np.array of float in interval [0, 1]
+                Standard deviations for each feature in normal distributions to create bubbles.
+
+            Returns
+            -------
+            r : float
+                measure of discrimination
+                measure of discrimination
+            X_full: np.array of float
+                Features of the generated data set.
+            C_full: np.array of bool
+                Class membership of the protected class.
+            Y_full: np.array of bool
+                Outcomes.
 
         """
 
@@ -99,13 +151,27 @@ class DataGen:
             print("Total number of people in suburban neighbourhoods: \t{}".format(m_suburb))
             print("----")
 
-        X_urban = np.random.randn(m_urban, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
-        X_suburb = np.random.randn(m_suburb, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
+        # X_urban = np.random.randn(m_urban, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
+        for dim in range(len(std)):
+            if dim == 0:
+                X_urban = np.random.randn(m_urban, 1) * std[dim]
+            else:
+                X_urban = np.concatenate((X_urban, np.random.randn(m_urban, 1) * std[dim]), axis=1)
+
+        # X_suburb = np.random.randn(m_suburb, 2).dot(np.array([[std_feature_1, 0], [0, std_feature_2]]))
+        for dim in range(len(std)):
+            if dim == 0:
+                X_suburb = np.random.randn(m_suburb, 1) * std[dim]
+            else:
+                X_suburb = np.concatenate((X_suburb, np.random.randn(m_suburb, 1) * std[dim]), axis=1)
+
 
         # shift suburban population
-        X_suburb += np.array([1, 0])
+        shift = np.zeros(len(std))
+        shift[0] = 1
+        X_suburb += shift
 
-        # sort data points in both sets
+        # sort data points in both sets by feature 1
         X_urban_sorted = sorted(X_urban, key=lambda x: x[1], reverse=False)
 
         # generate a vector C denoting the racial information
@@ -168,9 +234,7 @@ class DataGen:
 
         return X_full, C_full, Y_full
 
-    # TODO: handle Y_pred = None
-    # TODO: Add some way to use the model to plot prototypes
-    def prepare_plot(self, X, C, Y, Y_pred=None):
+    def prepare_plot(self, X, C, Y, Y_pred = None, prototypes=None):
         """
             Generated plot information for a given data set with given classification.
 
@@ -187,6 +251,9 @@ class DataGen:
 
             Y_pred: np.array of bool
                 Array containing all data point predicted outcomes.
+
+            prototypes: np.ndarray of floats
+                Array of prototype locations.
 
             Returns
             -------
@@ -285,7 +352,11 @@ class DataGen:
             # white: pay
             ax.scatter(X[log11_pos, 0], X[log11_pos, 1], c=_tango_color(self.color_pos, 0),
                        edgecolors=_tango_color(self.color_1, 2), marker='s')
-
+            if prototypes is not None:
+                ax.scatter(prototypes[0, 0], prototypes[0, 1], c=_tango_color(self.color_0, 1),
+                           edgecolors=_tango_color(self.color_0, 2), linewidths=2, s=150, marker='D')
+                ax.scatter(prototypes[1, 0], prototypes[1, 1], c=_tango_color(self.color_1, 1),
+                           edgecolors=_tango_color(self.color_1, 2), linewidths=2, s=150, marker='D')
         return ax
 
     def plot_prepared_dist(self, ax):
@@ -301,7 +372,7 @@ class DataGen:
         plt.show()
         return
 
-    def plot_dist(self, X, C, Y, Y_pred):
+    def plot_dist(self, X, C, Y, Y_pred, prototypes=None):
         """
             Prints classification of a given data set.
 
@@ -318,8 +389,12 @@ class DataGen:
 
             Y_pred: np.array of bool
                 Array containing all data point predicted outcomes.
+
+            prototypes: np.ndarray of floats
+                Array of prototype locations.
+
         """
-        ax = self.prepare_plot(X, C, Y, Y_pred)
+        ax = self.prepare_plot(X, C, Y, Y_pred, prototypes)
         self.plot_prepared_dist(ax)
         return
 
@@ -350,5 +425,22 @@ class DataGen:
             n_pos = list(Y_pred).count(True)
             print("Number of positive values in Y_pred: {}".format(n_pos))
             
-        self.plot_dist(X, C, Y, Y_pred)
+        self.plot_dist(X, C, Y, Y_pred, model.w_)
         return
+
+    def normalize_feature(self, feature):
+        """
+            Normalizes a feature by l2 norm.
+
+            Parameters
+            ----------
+            feature: (n x 1) np.array of floats
+                Unnormalized feature vector.
+
+            Returns
+            -------
+            normalized_feature: (n x 1) np.array of floats
+                Normalized feature vector.
+        """
+        normalized_feature = normalize(feature.T).T
+        return normalized_feature

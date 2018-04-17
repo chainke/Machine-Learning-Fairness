@@ -9,6 +9,7 @@ from glvq.plot_2d import plot2d
 
 from sklearn.utils import shuffle
 from sklearn_lvq.glvq import GlvqModel
+from sklearn.preprocessing import normalize
 from quad_fair_glvq import MeanDiffGlvqModel as FairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
@@ -426,3 +427,20 @@ class DataGen:
             
         self.plot_dist(X, C, Y, Y_pred, model.w_)
         return
+
+    def normalize_feature(self, feature):
+        """
+            Normalizes a feature by l2 norm.
+
+            Parameters
+            ----------
+            feature: (n x 1) np.array of floats
+                Unnormalized feature vector.
+
+            Returns
+            -------
+            normalized_feature: (n x 1) np.array of floats
+                Normalized feature vector.
+        """
+        normalized_feature = normalize(feature.T).T
+        return normalized_feature

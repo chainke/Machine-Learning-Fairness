@@ -10,6 +10,7 @@ from glvq.plot_2d import plot2d
 from sklearn.utils import shuffle
 from sklearn_lvq.glvq import GlvqModel
 from sklearn.preprocessing import normalize
+from sklearn.metrics.pairwise import euclidean_distances
 from quad_fair_glvq import MeanDiffGlvqModel as FairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
@@ -444,3 +445,85 @@ class DataGen:
         """
         normalized_feature = normalize(feature.T).T
         return normalized_feature
+
+    def normalize_category_feature(self, feature):
+        """
+            Normalizes a feature by l2 norm.
+
+            Parameters
+            ----------
+            feature: (n x 1) np.array of floats
+                Unnormalized feature vector.
+
+            Returns
+            -------
+            normalized_feature: (n x 1) np.array of floats
+                Normalized feature vector.
+        """
+        n = len(feature)
+
+        values = np.unique(feature)
+
+        vertices = self.equilateral_simplex(len(values))
+
+        self.check_dist(vertices)
+
+        # dimension of each vertex
+        _, m = vertices.shape
+
+        normalized_feature = np.zeros((n, m))
+        for i in range(n):
+            # find index of i-th element of feature in values
+            j = list(values).index(feature[i])
+
+            # place vertex of that index in normalized vector
+            normalized_feature[i] = vertices[j]
+
+        return normalized_feature
+
+    #TODO: MAKE POINTS REALLY EQUILATERAL
+    def equilateral_simplex(self, n):
+        """
+            Normalizes a feature by l2 norm.
+
+            Parameters
+            ----------
+            n: int
+                Number of dimensions.
+
+            Returns
+            -------
+            vertices: np.array of floats
+                Vector of coordinates of the vertices.
+        """
+        # Initialise X with n x (n-1) zeroes
+        vertices = np.zeros((n, (n - 1)))
+        # Initialise p with n x 1 zeroes
+        p = np.zeros(n)
+        for i in range(1, n):
+            print("i: {}".format(i))
+            for j in range(0, (i-1)):
+                print("i: {}\tj: {}\tp[j]: {}".format(i, j, p[j]))
+                vertices[i][j] = p[j]
+            p[i-1] = 1 / math.sqrt(2 * (i + 1) * i)
+            print("p{}: {}".format(i-1, p[i-1]))
+            vertices[i, (i - 1)] = p[i-1] * i
+
+        return vertices
+
+    def check_dist(self, vertices):
+        """
+            Helper function to check whether the distance between point in a vector.
+
+            Parameters
+            ----------
+            vertices: np.array of floats
+                Vector of coordinates of the vertices.
+        """
+        for v in vertices:
+            print(v)
+            for u in vertices:
+                if not (v == u).all():
+                    print("dist of {}\t and \t{}\t: \t{}".format(v, u, np.linalg.norm(v-u)))
+
+        return

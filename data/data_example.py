@@ -16,7 +16,7 @@ model.fit(X, Y)
 Y_pred = model.predict(X)
 
 ax = gen.prepare_plot(X=X, C=C, Y=Y, Y_pred=Y_pred, prototypes=model.w_)
-#gen.plot_prepared_dist(ax)
+gen.plot_prepared_dist(ax)
 
 test_vector = np.array([1, 1, 2, 1, 3, 2, 1])
 

@@ -358,6 +358,8 @@ class DataGen:
                            edgecolors=_tango_color(self.color_0, 2), linewidths=2, s=150, marker='D')
                 ax.scatter(prototypes[1, 0], prototypes[1, 1], c=_tango_color(self.color_1, 1),
                            edgecolors=_tango_color(self.color_1, 2), linewidths=2, s=150, marker='D')
+        if self.verbose:
+            print("----")
         return ax
 
     def plot_prepared_dist(self, ax):
@@ -425,6 +427,7 @@ class DataGen:
         if self.verbose:
             n_pos = list(Y_pred).count(True)
             print("Number of positive values in Y_pred: {}".format(n_pos))
+            print("----")
             
         self.plot_dist(X, C, Y, Y_pred, model.w_)
         return
@@ -466,7 +469,7 @@ class DataGen:
 
         vertices = self.equilateral_simplex(len(values))
 
-        self.check_dist(vertices)
+        #self.check_dist(vertices)
 
         # dimension of each vertex
         _, m = vertices.shape
@@ -481,7 +484,6 @@ class DataGen:
 
         return normalized_feature
 
-    #TODO: MAKE POINTS REALLY EQUILATERAL
     def equilateral_simplex(self, n):
         """
             Normalizes a feature by l2 norm.
@@ -496,18 +498,29 @@ class DataGen:
             vertices: np.array of floats
                 Vector of coordinates of the vertices.
         """
+
+        if self.verbose:
+            print("equilateral_simplex:")
+
         # Initialise X with n x (n-1) zeroes
         vertices = np.zeros((n, (n - 1)))
         # Initialise p with n x 1 zeroes
         p = np.zeros(n)
+
         for i in range(1, n):
-            print("i: {}".format(i))
+            if self.verbose:
+                print("i: {}".format(i))
             for j in range(0, (i-1)):
-                print("i: {}\tj: {}\tp[j]: {}".format(i, j, p[j]))
-                vertices[i][j] = p[j]
-            p[i-1] = 1 / math.sqrt(2 * (i + 1) * i)
-            print("p{}: {}".format(i-1, p[i-1]))
-            vertices[i, (i - 1)] = p[i-1] * i
+                if self.verbose:
+                    print("i: {}\tj: {}\tp[j]: {}".format(i, j, p[j]))
+                vertices[i][j] = p[j + 1]
+            p[i] = 1 / math.sqrt(2 * (i + 1) * i)
+            if self.verbose:
+                print("p{}: {}".format(i, p[i]))
+            vertices[i, (i - 1)] = p[i] * (i + 1)
+
+        if self.verbose:
+            print("----")
 
         return vertices
 

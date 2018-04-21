@@ -2,9 +2,21 @@ import csv
 
 
 def process_row(row):
-	"""
+    """
+        Changes the real names of the features into for us usable integer values.
+        The mapping can be found in "value_dictionary".
 
-	"""
+        Parameters
+        ----------
+        row: list of strings
+            the original names of the features
+
+        Returns
+        -------
+        new_row : list of strings
+            for us usable int values
+
+    """
 	new_row = []
 	for i in range(1,len(row)):
 		new_row.append(value_dictionary[row[i]])
@@ -13,6 +25,15 @@ def process_row(row):
 
 
 def get_data():
+	    """
+        Returns the processed data as list.
+
+        Returns
+        -------
+        csv_data : list of int
+            allbus data with for us usable int values
+
+    """
 
 	csv_data = []
 

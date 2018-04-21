@@ -12,8 +12,22 @@ def process_row(row):
 	return new_row
 
 
+def get_data():
+
+	csv_data = []
+
+	with open(processed_data_name, newline = '') as csvfile:
+		dataReader = csv.reader(csvfile, delimiter = ',', quotechar = '|')
+
+		for row in dataReader:
+			csv_data.append(row)
+
+	return csv_data
+
+
 processed_data = []
 value_dictionary = {"BEFRISTET" : 0, "UNBEFRISTET" : 1, "FRAU" : 0, "MANN": 1, "MITTLERE REIFE": 0, "VOLKS-,HAUPTSCHULE": 1, "FACHHOCHSCHULREIFE" : 2, "HOCHSCHULREIFE" : 3, "OHNE ABSCHLUSS" : 4, "ANDERER ABSCHLUSS": 5, "JA": 1, "NEIN":0, "NA": 0}
+processed_data_name = "dataset_processed.csv"
 
 # read and process data
 with open('dataset_selected.csv') as csvfile:
@@ -27,14 +41,13 @@ with open('dataset_selected.csv') as csvfile:
 		if(row[1] != "NA"):
 			#print(row)
 			new_row = process_row(row)
-			print(new_row)
+			#print(new_row)
 			processed_data.append(new_row)
 
 
 #print(str(processed_data))
 
-with open('dataset_processed.csv', 'w', newline = '') as csvfile:
+with open(processed_data_name, 'w', newline = '') as csvfile:
 	dataWriter = csv.writer(csvfile, delimiter=',')
 	for i in range(len(processed_data)):
 		dataWriter.writerow(processed_data[i])
-

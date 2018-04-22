@@ -1,0 +1,27 @@
+
+German          English                             Type            #   comment
+
+kredit          Creditability                       binary
+laufkont        Account Balance                     categories       4
+laufzeit        Duration of Credit (month)          metric
+dlaufzeit       Payment Status of Previous Credit   categories      10  2 in category ">54"
+moral           Purpose                             categories       5
+verw            Credit Amount                       categories      11
+Hoehe/credit    Value Savings/Stocks                metric
+dhoehe          Length of current employment        categories      10
+sparkont        Instalment per cent                 categories       5  how large is largest?
+beszeit         Sex & Marital Status                categories       5  how large is largest?
+rate            Guarantors                          categories       4  how large is largest?
+famges          Duration in Current address         categories       4
+buerge          ???                                 categories       3
+wohnzeit        ???                                 categories       4  how large is largest?
+verm            Most valuable available asset       categories       4
+alter           Age (years)                         metric
+dalter          categories       5  how large are
+weitkred        Concurrent Credits                  categories       3
+wohn            Type of apartment                   categories       3
+bishkred        No of Credits at this Bank          categories       4
+beruf           Occupation                          categories       4
+pers            No of dependents                    categories       2
+telef           Telephone                           binary
+gastarb         Foreign Worker                      binary

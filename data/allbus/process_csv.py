@@ -26,28 +26,39 @@ def process_row(row):
 
 def get_data():
 	"""
-	Returns the processed data as list.
+	Reads the csv and returns the necessary X, y and protected values.
 
 	Returns
 	-------
-	csv_data : list of int
+	X : list of int
 	    allbus data with for us usable int values
+	y : list of int, 0 or 1
+		the labels for the data
+	protected : list of int, 0 or 1
+		whether the individual is in the protected group or not (currently gender, but this might be changed)
 
 	"""
 
-	csv_data = []
+	X = []
+	y = []
+	protected = []
+
+	label_position = 0
+	protected_position = 1 # if it is gender
 
 	with open(processed_data_name, newline = '') as csvfile:
 		dataReader = csv.reader(csvfile, delimiter = ',', quotechar = '|')
 
 		for row in dataReader:
-			csv_data.append(row)
+			y.append(row[label_position])
+			protected.append(row[protected_position])
+			X.append(row[1:])
 
-	return csv_data
+	return X, y, protected
 
 
 processed_data = []
-value_dictionary = {"BEFRISTET" : 0, "UNBEFRISTET" : 1, "FRAU" : 0, "MANN": 1, 
+value_dictionary = {"BEFRISTET" : 0, "UNBEFRISTET" : 1, "FRAU" : 1, "MANN": 0, 
 "MITTLERE REIFE": 0, "VOLKS-,HAUPTSCHULE": 1, "FACHHOCHSCHULREIFE" : 2, "HOCHSCHULREIFE" : 3, 
 "OHNE ABSCHLUSS" : 4, "ANDERER ABSCHLUSS": 5, "JA": 1, "NEIN":0, "NA": 0,
 "THUERINGEN" : 0, "EHEM. BERLIN-OST" : 1, "HESSEN" : 2, "HAMBURG" : 3, "NORDRHEIN-WESTFALEN": 4,
@@ -80,3 +91,7 @@ with open(processed_data_name, 'w', newline = '') as csvfile:
 	dataWriter = csv.writer(csvfile, delimiter=',')
 	for i in range(len(processed_data)):
 		dataWriter.writerow(processed_data[i])
+
+
+X,y,protected = get_data()
+print(y)

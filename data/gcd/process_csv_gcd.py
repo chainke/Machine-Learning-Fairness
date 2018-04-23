@@ -70,8 +70,8 @@ def preprocess_data(data, feature_types):
         elif types[i] is "categories":
             processed_col = generator.normalize_category_feature(col)
 
-        #print("processed_data: {} \t processed_col: {}".format(processed_data.shape, processed_col.shape))
-        processed_data = np.concatenate((processed_data, processed_col), axis=1)
+        print("processed_data: {} \t processed_col: {}".format(processed_data.shape, processed_col.shape))
+        processed_data = np.concatenate((processed_data, processed_col), axis=0)
 
 
     return np.array(processed_data)

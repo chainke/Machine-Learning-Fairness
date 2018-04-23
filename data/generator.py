@@ -466,7 +466,8 @@ def normalize_category_feature(feature):
         normalized_feature: (n x 1) np.array of floats
             Normalized feature vector.
     """
-    n = len(feature)
+    _, n = feature.shape
+    # print("n: {}".format(n))
 
     values = np.unique(feature)
 
@@ -486,7 +487,8 @@ def normalize_category_feature(feature):
         # place vertex of that index in normalized vector
         normalized_feature[i] = vertices[j]
 
-    return normalized_feature
+    # print(normalized_feature)
+    return normalized_feature.T
 
 
 def equilateral_simplex(n, verbose=False):

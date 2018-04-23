@@ -93,5 +93,5 @@ with open(processed_data_name, 'w', newline = '') as csvfile:
 		dataWriter.writerow(processed_data[i])
 
 
-X,y,protected = get_data()
-print(y)
+#X,y,protected = get_data()
+#print(y)

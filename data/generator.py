@@ -432,111 +432,117 @@ class DataGen:
         self.plot_dist(X, C, Y, Y_pred, model.w_)
         return
 
-    def normalize_feature(self, feature):
-        """
-            Normalizes a feature by l2 norm.
 
-            Parameters
-            ----------
-            feature: (n x 1) np.array of floats
-                Unnormalized feature vector.
+def normalize_feature(feature):
+    """
+        Normalizes a feature by l2 norm.
 
-            Returns
-            -------
-            normalized_feature: (n x 1) np.array of floats
-                Normalized feature vector.
-        """
-        normalized_feature = normalize(feature.T).T
-        return normalized_feature
+        Parameters
+        ----------
+        feature: (n x 1) np.array of floats
+            Unnormalized feature vector.
 
-    def normalize_category_feature(self, feature):
-        """
-            Normalizes a feature by l2 norm.
+        Returns
+        -------
+        normalized_feature: (n x 1) np.array of floats
+            Normalized feature vector.
+    """
+    normalized_feature = normalize(feature.T).T
+    return normalized_feature
 
-            Parameters
-            ----------
-            feature: (n x 1) np.array of floats
-                Unnormalized feature vector.
 
-            Returns
-            -------
-            normalized_feature: (n x 1) np.array of floats
-                Normalized feature vector.
-        """
-        n = len(feature)
+# WARNING: number of values is computed and not a parameter. Could lead to problems if one value is not in set.
+def normalize_category_feature(feature):
+    """
+        Normalizes a feature by l2 norm.
 
-        values = np.unique(feature)
+        Parameters
+        ----------
+        feature: (n x 1) np.array of floats
+            Un-normalized feature vector.
 
-        vertices = self.equilateral_simplex(len(values))
+        Returns
+        -------
+        normalized_feature: (n x 1) np.array of floats
+            Normalized feature vector.
+    """
+    n = len(feature)
 
-        #self.check_dist(vertices)
+    values = np.unique(feature)
 
-        # dimension of each vertex
-        _, m = vertices.shape
+    vertices = equilateral_simplex(len(values))
 
-        normalized_feature = np.zeros((n, m))
-        for i in range(n):
-            # find index of i-th element of feature in values
-            j = list(values).index(feature[i])
+    #check_dist(vertices)
 
-            # place vertex of that index in normalized vector
-            normalized_feature[i] = vertices[j]
+    # dimension of each vertex
+    _, m = vertices.shape
 
-        return normalized_feature
+    normalized_feature = np.zeros((n, m))
+    for i in range(n):
+        # find index of i-th element of feature in values
 
-    def equilateral_simplex(self, n):
-        """
-            Normalizes a feature by l2 norm.
+        j = list(values).index(feature.T[i])
 
-            Parameters
-            ----------
-            n: int
-                Number of dimensions.
+        # place vertex of that index in normalized vector
+        normalized_feature[i] = vertices[j]
 
-            Returns
-            -------
-            vertices: np.array of floats
-                Vector of coordinates of the vertices.
-        """
+    return normalized_feature
 
-        if self.verbose:
-            print("equilateral_simplex:")
 
-        # Initialise X with n x (n-1) zeroes
-        vertices = np.zeros((n, (n - 1)))
-        # Initialise p with n x 1 zeroes
-        p = np.zeros(n)
+def equilateral_simplex(n, verbose=False):
+    """
+        Normalizes a feature by l2 norm.
 
-        for i in range(1, n):
-            if self.verbose:
-                print("i: {}".format(i))
-            for j in range(0, (i-1)):
-                if self.verbose:
-                    print("i: {}\tj: {}\tp[j]: {}".format(i, j, p[j]))
-                vertices[i][j] = p[j + 1]
-            p[i] = 1 / math.sqrt(2 * (i + 1) * i)
-            if self.verbose:
-                print("p{}: {}".format(i, p[i]))
-            vertices[i, (i - 1)] = p[i] * (i + 1)
+        Parameters
+        ----------
+        n: int
+            Number of dimensions.
 
-        if self.verbose:
-            print("----")
+        Returns
+        -------
+        vertices: np.array of floats
+            Vector of coordinates of the vertices.
+    """
 
-        return vertices
+    if verbose:
+        print("equilateral_simplex:")
 
-    def check_dist(self, vertices):
-        """
-            Helper function to check whether the distance between point in a vector.
+    # Initialise X with n x (n-1) zeroes
+    vertices = np.zeros((n, (n - 1)))
+    # Initialise p with n x 1 zeroes
+    p = np.zeros(n)
 
-            Parameters
-            ----------
-            vertices: np.array of floats
-                Vector of coordinates of the vertices.
-        """
-        for v in vertices:
-            print(v)
-            for u in vertices:
-                if not (v == u).all():
-                    print("dist of {}\t and \t{}\t: \t{}".format(v, u, np.linalg.norm(v-u)))
+    for i in range(1, n):
+        if verbose:
+            print("i: {}".format(i))
+        for j in range(0, (i-1)):
+            if verbose:
+                print("i: {}\tj: {}\tp[j]: {}".format(i, j, p[j]))
+            vertices[i][j] = p[j + 1]
+        p[i] = 1 / math.sqrt(2 * (i + 1) * i)
+        if verbose:
+            print("p{}: {}".format(i, p[i]))
+        vertices[i, (i - 1)] = p[i] * (i + 1)
 
-        return
+    if verbose:
+        print("----")
+
+    return vertices
+
+
+def check_dist(vertices):
+    """
+        Helper function to check whether the distance between point in a vector.
+
+        Parameters
+        ----------
+        vertices: np.array of floats
+            Vector of coordinates of the vertices.
+    """
+    for v in vertices:
+        print(v)
+        for u in vertices:
+            if not (v == u).all():
+                print("dist of {}\t and \t{}\t: \t{}".format(v, u, np.linalg.norm(v-u)))
+
+    return

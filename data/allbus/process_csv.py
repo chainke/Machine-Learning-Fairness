@@ -66,7 +66,7 @@ value_dictionary = {"BEFRISTET" : 0, "UNBEFRISTET" : 1, "FRAU" : 1, "MANN": 0,
 "BAYERN" : 10, "FRUEHERE DT.OSTGEB." : 11, "RHEINLAND-PFALZ" : 12, "NIEDERSACHSEN" : 13, "SONSTIGES LAND" : 14, 
 "MECKLENB.-VORPOMMERN" : 15, "BADEN-WUERTTEMBERG" : 16, "SAARLAND" : 17, "BREMEN" : 18, "EHEM. BERLIN-WEST" : 19,
 "UNTER 4 WOCHEN" : 1, "4 BIS 11 WOCHEN" : 2, "12 BIS 25 WOCHEN" : 3, "26 BIS 51 WOCHEN" : 4, "52 BIS 103 WOCHEN" : 5, 
-"104 UND MEHR WOCHEN" : 6}
+"104 UND MEHR WOCHEN" : 0}
 processed_data_name = "dataset_processed.csv"
 
 # read and process data

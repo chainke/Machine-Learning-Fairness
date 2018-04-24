@@ -32,6 +32,14 @@ def get_data(file_path):
     return np.array(csv_data)
 
 
+def save_to_csv(data, path="result.csv"):
+    print('Saving to CSV')
+    with open(path, 'w', newline='') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        # write rest of data
+        writer.writerows(data)
+
+
 def preprocess_data(data, feature_types):
     """
     Returns the processed data as list.
@@ -61,28 +69,31 @@ def preprocess_data(data, feature_types):
     for i in range(num_cols):
         col = data[:, i][np.newaxis]
 
-        #print("type of col: {}".format(type(col)))
+        # print("type of col: {}".format(type(col)))
 
         if types[i] is "binary":
-            processed_col = col
+            processed_col = generator.normalize_binary_feature(col)
         elif types[i] is "unnormalized":
             processed_col = generator.normalize_feature(col)
         elif types[i] is "categories":
             processed_col = generator.normalize_category_feature(col)
+        elif types[i] is "skip":
+            continue
 
-        print("processed_data: {} \t processed_col: {}".format(processed_data.shape, processed_col.shape))
+        print("i: {}\ttype: {} \tprocessed_data: {} \t processed_col: {}".format(i, types[i], processed_data.shape,
+                                                                                 processed_col.shape))
         processed_data = np.concatenate((processed_data, processed_col), axis=0)
-
 
     return np.array(processed_data)
 
 
-types = ["binary", "categories", "skip", "categories", "categories", "categories", "skip", "skip",  "categories",
-         "categories", "categories",  "categories", "categories", "categories", "categories", "skip", "skip",
-         "categories", "categories",  "categories", "categories", "categories", "binary", "binary"]
+types = ["binary", "categories", "skip", "categories", "categories", "skip", "categories",
+         "categories", "categories", "categories", "categories", "categories", "categories", "skip",
+         "categories", "categories", "categories", "categories", "categories", "binary", "binary"]
 
 read_data = get_data("gcd.csv")
 proc_data = preprocess_data(read_data[1:], types)
+save_to_csv(proc_data.T, path="gcd_processed.csv")
 print(proc_data)
 print(proc_data.shape)
 

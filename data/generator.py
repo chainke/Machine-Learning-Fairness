@@ -451,6 +451,29 @@ def normalize_feature(feature):
     return normalized_feature
 
 
+def normalize_binary_feature(feature):
+    """
+        Normalizes a feature by l2 norm.
+
+        Parameters
+        ----------
+        feature: (n x 1) np.array of floats
+            Binary feature vector.
+
+        Returns
+        -------
+        normalized_feature: (n x 1) np.array of floats
+            Normalized feature vector.
+    """
+    n, m = feature.shape
+    values = np.unique(feature)
+    normalized_feature = np.zeros((n, m))
+    for i in range(m):
+        if feature[0, i] == values[1]:
+            normalized_feature[0, i] = 1
+    return normalized_feature
+
+
 # WARNING: number of values is computed and not a parameter. Could lead to problems if one value is not in set.
 def normalize_category_feature(feature):
     """

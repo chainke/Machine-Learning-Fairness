@@ -80,8 +80,8 @@ def preprocess_data(data, feature_types):
         elif types[i] is "skip":
             continue
 
-        print("i: {}\ttype: {} \tprocessed_data: {} \t processed_col: {}".format(i, types[i], processed_data.shape,
-                                                                                 processed_col.shape))
+        #print("i: {}\ttype: {} \tprocessed_data: {} \t processed_col: {}".format(i, types[i], processed_data.shape,
+        #                                                                         processed_col.shape))
         processed_data = np.concatenate((processed_data, processed_col), axis=0)
 
     return np.array(processed_data)

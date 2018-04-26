@@ -3,8 +3,6 @@ import numpy as np
 import data.generator as generator
 
 
-# processed_data_name = "dataset_processed.csv"
-
 def get_data(file_path):
     """
     Returns the processed data as list.
@@ -33,6 +31,19 @@ def get_data(file_path):
 
 
 def save_to_csv(data, path="result.csv"):
+    """
+    Saves data matrix to a new csv-file.
+
+    Parameters
+    ----------
+    data: np.array
+        Data matrix to write.
+
+    path: string
+        Path to output file.
+
+    """
+
     print('Saving to CSV')
     with open(path, 'w', newline='') as f:
         writer = csv.writer(f, lineterminator='\n')
@@ -40,7 +51,7 @@ def save_to_csv(data, path="result.csv"):
         writer.writerows(data)
 
 
-def preprocess_data(data, feature_types):
+def preprocess_data(data, feature_types, verbose=False):
     """
     Returns the processed data as list.
 
@@ -71,37 +82,42 @@ def preprocess_data(data, feature_types):
 
         # print("type of col: {}".format(type(col)))
 
-        if types[i] is "binary":
+        if feature_types[i] is "binary":
             processed_col = generator.normalize_binary_feature(col)
-        elif types[i] is "unnormalized":
+        elif feature_types[i] is "unnormalized":
             processed_col = generator.normalize_feature(col)
-        elif types[i] is "categories":
+        elif feature_types[i] is "categories":
             processed_col = generator.normalize_category_feature(col)
-        elif types[i] is "skip":
+        elif feature_types[i] is "skip":
             continue
 
-        #print("i: {}\ttype: {} \tprocessed_data: {} \t processed_col: {}".format(i, types[i], processed_data.shape,
-        #                                                                         processed_col.shape))
+        if verbose:
+            print("i: {}\ttype: {} \tprocessed_data: {} \t processed_col: {}".format(i, feature_types[i],
+                                                                                     processed_data.shape,
+                                                                                     processed_col.shape))
         processed_data = np.concatenate((processed_data, processed_col), axis=0)
 
     return np.array(processed_data)
 
 
-types = ["binary", "categories", "skip", "categories", "categories", "skip", "categories",
-         "categories", "categories", "categories", "categories", "categories", "categories", "skip",
-         "categories", "categories", "categories", "categories", "categories", "binary", "binary"]
+def process_gcd_to_csv(in_path="gcd.csv", out_path="gcd_processed.csv"):
+    """
+    Reads gcd data and writes it to a new csv-file.
 
-read_data = get_data("gcd.csv")
-proc_data = preprocess_data(read_data[1:], types)
-save_to_csv(proc_data.T, path="gcd_processed.csv")
-print(proc_data)
-print(proc_data.shape)
+    Parameters
+    ----------
+    in_path: string
+        Path to input file.
 
-# idea:
-# load all data
-# for each column
-#  - read value
-#  - translate/normalize
-#  - add translated columns to output
+    out_path: string
+        Path to input file.
 
-# save output to new file (.csv/.npz)
+    """
+    read_data = get_data(in_path)
+
+    types = ["binary", "categories", "skip", "categories", "categories", "skip", "categories",
+             "categories", "categories", "categories", "categories", "categories", "categories", "skip",
+             "categories", "categories", "categories", "categories", "categories", "binary", "binary"]
+
+    proc_data = preprocess_data(read_data[1:], types)
+    save_to_csv(proc_data.T, path=out_path)

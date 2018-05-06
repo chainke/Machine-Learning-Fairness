@@ -39,7 +39,8 @@ def test_allbus():
         #print("i: {}\ttype: {} \tprocessed_data: {} \t processed_col: {}".format(i, types[i], normalize_process.shape,
         #                                                                         processed_col.shape))
         normalize_process = np.concatenate((normalize_process, processed_col), axis=0)
-        X_normalized = normalize_process[1:].T
+        #X_normalized = normalize_process[1:].T
+        X_normalized = normalize_process.T
 
     # write to csv for better overview
     allbus_data.write_to_csv(X_normalized, "normalized_data")
@@ -87,9 +88,17 @@ def test_gcd():
                 X_row.append(float(gcd_data[i][j]))
         X.append(X_row)
 
-    
+    print(X[0])
+
     print("\n\nfairness on gcd label: \n")
     measure.printAbsoluteMeasures(y, protected)
+
+    print("\n\nfairness on glvq label: \n")
+    glvq = GlvqModel()
+    glvq.fit(X,y)
+    glvq_predicted = glvq.predict(X)
+
+    #print(glvq_predicted)
 
     print("\n\nfairness on abs_glvq label: \n")
     absglvq = abs_glvq.MeanDiffGlvqModel()

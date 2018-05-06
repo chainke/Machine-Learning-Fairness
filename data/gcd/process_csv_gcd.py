@@ -77,10 +77,11 @@ def preprocess_data(data, feature_types, verbose=False):
     num_rows, num_cols = data.shape
 
     processed_data = np.zeros(num_rows)[np.newaxis]
+    print("initial preprocessed_data: {}".format(processed_data))
     for i in range(num_cols):
         col = data[:, i][np.newaxis]
-
-        # print("type of col: {}".format(type(col)))
+        print(col)
+        print("type of col: {}".format(type(col)))
 
         if feature_types[i] is "binary":
             processed_col = generator.normalize_binary_feature(col)
@@ -91,12 +92,14 @@ def preprocess_data(data, feature_types, verbose=False):
         elif feature_types[i] is "skip":
             continue
 
+        print("current processed_col: {}".format(processed_col))
+
         if verbose:
             print("i: {}\ttype: {} \tprocessed_data: {} \t processed_col: {}".format(i, feature_types[i],
                                                                                      processed_data.shape,
                                                                                      processed_col.shape))
         processed_data = np.concatenate((processed_data, processed_col), axis=0)
-
+        print("preprocessed_data of {}: {}".format(i, processed_data))
     return np.array(processed_data)
 
 

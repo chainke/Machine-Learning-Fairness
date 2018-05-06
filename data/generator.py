@@ -235,202 +235,219 @@ class DataGen:
 
         return X_full, C_full, Y_full
 
-    def prepare_plot(self, X, C, Y, Y_pred = None, prototypes=None):
-        """
-            Generated plot information for a given data set with given classification.
+def prepare_plot(X, C, Y, Y_pred = None, prototypes=None, verbose=False):
+    """
+        Generated plot information for a given data set with given classification.
 
-            Parameters
-            ----------
-            X: np.ndarray of floats
-                Array containing all data point coordinates.
+        Parameters
+        ----------
+        X: np.ndarray of floats
+            Array containing all data point coordinates.
 
-            C: np.array of bool
-                Array containing all data point subclass memberships.
+        C: np.array of bool
+            Array containing all data point subclass memberships.
 
-            Y: np.array of bool
-                Array containing all data point outcomes.
+        Y: np.array of bool
+            Array containing all data point outcomes.
 
-            Y_pred: np.array of bool
-                Array containing all data point predicted outcomes.
+        Y_pred: np.array of bool
+            Array containing all data point predicted outcomes.
 
-            prototypes: np.ndarray of floats
-                Array of prototype locations.
+        prototypes: np.ndarray of floats
+            Array of prototype locations.
 
-            Returns
-            -------
-            ax: subplot info
-                Contains prepared plot details.
-        """
+        verbose: bool
+                Flag to show status prints.
+
+        Returns
+        -------
+        ax: subplot info
+            Contains prepared plot details.
+    """
+
+    color_0 = 'skyblue'
+    color_1 = 'scarletred'
+    color_pos = 'chocolate'
+
+    # non-white: do not pay
+    log00 = np.logical_and(np.logical_not(C), np.logical_not(Y))
+    # non-white: pay
+    log01 = np.logical_and(np.logical_not(C), Y)
+
+    # white: do not pay
+    log10 = np.logical_and(C, np.logical_not(Y))
+    # white: pay
+    log11 = np.logical_and(C, Y)
+
+    # Plot the data and the prototypes as well
+    fig = plt.figure()
+    fig.canvas.set_window_title("LVQ with continuous distance to city center")
+    ax = fig.add_subplot(111)
+    ax.set_xlabel("Distance from City Center")
+    ax.set_ylabel("Income")
+
+    if Y_pred is None:
         # non-white: do not pay
-        log00 = np.logical_and(np.logical_not(C), np.logical_not(Y))
+        ax.scatter(X[log00, 0], X[log00, 1], c=_tango_color(color_0, 0),
+                   edgecolors=_tango_color(color_0, 2), marker='o')
         # non-white: pay
-        log01 = np.logical_and(np.logical_not(C), Y)
-
+        ax.scatter(X[log01, 0], X[log01, 1], c=_tango_color(color_0, 0),
+                   edgecolors=_tango_color(color_0, 2), marker='s')
         # white: do not pay
-        log10 = np.logical_and(C, np.logical_not(Y))
+        ax.scatter(X[log10, 0], X[log10, 1], c=_tango_color(color_1, 0),
+                   edgecolors=_tango_color(color_1, 2), marker='o')
         # white: pay
-        log11 = np.logical_and(C, Y)
-
-        # Plot the data and the prototypes as well
-        fig = plt.figure()
-        fig.canvas.set_window_title("LVQ with continuous distance to city center")
-        ax = fig.add_subplot(111)
-        ax.set_xlabel("Distance from City Center")
-        ax.set_ylabel("Income")
-
-        if Y_pred is None:
-            # non-white: do not pay
-            ax.scatter(X[log00, 0], X[log00, 1], c=_tango_color(self.color_0, 0),
-                       edgecolors=_tango_color(self.color_0, 2), marker='o')
-            # non-white: pay
-            ax.scatter(X[log01, 0], X[log01, 1], c=_tango_color(self.color_0, 0),
-                       edgecolors=_tango_color(self.color_0, 2), marker='s')
-            # white: do not pay
-            ax.scatter(X[log10, 0], X[log10, 1], c=_tango_color(self.color_1, 0),
-                       edgecolors=_tango_color(self.color_1, 2), marker='o')
-            # white: pay
-            ax.scatter(X[log11, 0], X[log11, 1], c=_tango_color(self.color_1, 0),
-                       edgecolors=_tango_color(self.color_1, 2), marker='s')
-        else:        
-            if self.verbose:
-                n_pos = list(Y_pred).count(True)
-                print("Number of positive values in Y_pred: {}".format(n_pos))
-    
-            # Gather indices based on classification
-    
-            # non-white | do not pay | classified positive
-            log00_pos = np.logical_and(log00, Y_pred)
-            # non-white | pay | classified positive
-            log01_pos = np.logical_and(log01, Y_pred)
-            # white | do not pay | classified positive
-            log10_pos = np.logical_and(log10, Y_pred)
-            # white | pay | classified positive
-            log11_pos = np.logical_and(log11, Y_pred)
-
-            if self.verbose:
-                n_pos = list(log00_pos).count(True)
-                print("Number of positive values in log01_pos: {} of {}".format(n_pos, len(log01_pos)))
-    
-            # non-white | do not pay | classified negative
-            log00_neg = np.logical_and(log00, np.logical_not(Y_pred))
-            # non-white | pay | classified negative
-            log01_neg = np.logical_and(log01, np.logical_not(Y_pred))
-    
-            # white| do not pay | classified negative
-            log10_neg = np.logical_and(log10, np.logical_not(Y_pred))
-            # white | pay  | classified negative
-            log11_neg = np.logical_and(log11, np.logical_not(Y_pred))
-    
-            if self.verbose:
-                sum_log = list(log00_pos).count(True) + list(log01_pos).count(True) \
-                          + list(log10_pos).count(True) + list(log11_pos).count(True) \
-                          + list(log00_neg).count(True) + list(log01_neg).count(True) \
-                          + list(log10_neg).count(True) + list(log11_neg).count(True)
-                print("Sum over all logs is: {}".format(sum_log))
-    
-            # non-white: do not pay
-            ax.scatter(X[log00_neg, 0], X[log00_neg, 1], c=_tango_color(self.color_0, 0),
-                       edgecolors=_tango_color(self.color_0, 2), marker='o')
-            # non-white: pay
-            ax.scatter(X[log01_neg, 0], X[log01_neg, 1], c=_tango_color(self.color_0, 0),
-                       edgecolors=_tango_color(self.color_0, 2), marker='s')
-            # white: do not pay
-            ax.scatter(X[log10_neg, 0], X[log10_neg, 1], c=_tango_color(self.color_1, 0),
-                       edgecolors=_tango_color(self.color_1, 2), marker='o')
-            # white: pay
-            ax.scatter(X[log11_neg, 0], X[log11_neg, 1], c=_tango_color(self.color_1, 0),
-                       edgecolors=_tango_color(self.color_1, 2), marker='s')
-    
-            # non-white: do not pay
-            ax.scatter(X[log00_pos, 0], X[log00_pos, 1], c=_tango_color(self.color_pos, 0),
-                       edgecolors=_tango_color(self.color_0, 2), marker='o')
-            # non-white: pay
-            ax.scatter(X[log01_pos, 0], X[log01_pos, 1], c=_tango_color(self.color_pos, 0),
-                       edgecolors=_tango_color(self.color_0, 2), marker='s')
-            # white: do not pay
-            ax.scatter(X[log10_pos, 0], X[log10_pos, 1], c=_tango_color(self.color_pos, 0),
-                       edgecolors=_tango_color(self.color_1, 2), marker='o')
-            # white: pay
-            ax.scatter(X[log11_pos, 0], X[log11_pos, 1], c=_tango_color(self.color_pos, 0),
-                       edgecolors=_tango_color(self.color_1, 2), marker='s')
-            if prototypes is not None:
-                ax.scatter(prototypes[0, 0], prototypes[0, 1], c=_tango_color(self.color_0, 1),
-                           edgecolors=_tango_color(self.color_0, 2), linewidths=2, s=150, marker='D')
-                ax.scatter(prototypes[1, 0], prototypes[1, 1], c=_tango_color(self.color_1, 1),
-                           edgecolors=_tango_color(self.color_1, 2), linewidths=2, s=150, marker='D')
-        if self.verbose:
-            print("----")
-        return ax
-
-    def plot_prepared_dist(self, ax):
-        """
-            Plots a prepared data set.
-
-            Parameters
-            ----------
-            ax: axes
-                Axes object that holds the plotting information.
-        """
-        ax.plot()
-        plt.show()
-        return
-
-    def plot_dist(self, X, C, Y, Y_pred, prototypes=None):
-        """
-            Prints classification of a given data set.
-
-            Parameters
-            ----------
-            X: np.ndarray of floats
-                Array containing all data point coordinates.
-
-            C: np.array of bool
-                Array containing all data point subclass memberships.
-
-            Y: np.array of bool
-                Array containing all data point outcomes.
-
-            Y_pred: np.array of bool
-                Array containing all data point predicted outcomes.
-
-            prototypes: np.ndarray of floats
-                Array of prototype locations.
-
-        """
-        ax = self.prepare_plot(X, C, Y, Y_pred, prototypes)
-        self.plot_prepared_dist(ax)
-        return
-
-    def print_dist_glvq(self, X, C, Y):
-        """
-            Prints classification of a given data set with GLVQ.
-
-            Parameters
-            ----------
-            X: np.ndarray of floats
-                Array containing all data point coordinates.
-
-            C: np.array of bool
-                Array containing all data point subclass memberships.
-
-            Y: np.array of bool
-                Array containing all data point outcomes.
-        """
-
-        # Train a GLVQ model
-        model = GlvqModel()
-        model.fit(X, Y)
-
-        # find prediction of model for all points
-        Y_pred = model.predict(X)
-
-        if self.verbose:
+        ax.scatter(X[log11, 0], X[log11, 1], c=_tango_color(color_1, 0),
+                   edgecolors=_tango_color(color_1, 2), marker='s')
+    else:
+        if verbose:
             n_pos = list(Y_pred).count(True)
             print("Number of positive values in Y_pred: {}".format(n_pos))
-            print("----")
-            
-        self.plot_dist(X, C, Y, Y_pred, model.w_)
-        return
+
+        # Gather indices based on classification
+
+        # non-white | do not pay | classified positive
+        log00_pos = np.logical_and(log00, Y_pred)
+        # non-white | pay | classified positive
+        log01_pos = np.logical_and(log01, Y_pred)
+        # white | do not pay | classified positive
+        log10_pos = np.logical_and(log10, Y_pred)
+        # white | pay | classified positive
+        log11_pos = np.logical_and(log11, Y_pred)
+
+        if verbose:
+            n_pos = list(log00_pos).count(True)
+            print("Number of positive values in log01_pos: {} of {}".format(n_pos, len(log01_pos)))
+
+        # non-white | do not pay | classified negative
+        log00_neg = np.logical_and(log00, np.logical_not(Y_pred))
+        # non-white | pay | classified negative
+        log01_neg = np.logical_and(log01, np.logical_not(Y_pred))
+
+        # white| do not pay | classified negative
+        log10_neg = np.logical_and(log10, np.logical_not(Y_pred))
+        # white | pay  | classified negative
+        log11_neg = np.logical_and(log11, np.logical_not(Y_pred))
+
+        if verbose:
+            sum_log = list(log00_pos).count(True) + list(log01_pos).count(True) \
+                      + list(log10_pos).count(True) + list(log11_pos).count(True) \
+                      + list(log00_neg).count(True) + list(log01_neg).count(True) \
+                      + list(log10_neg).count(True) + list(log11_neg).count(True)
+            print("Sum over all logs is: {}".format(sum_log))
+
+        # non-white: do not pay
+        ax.scatter(X[log00_neg, 0], X[log00_neg, 1], c=_tango_color(color_0, 0),
+                   edgecolors=_tango_color(color_0, 2), marker='o')
+        # non-white: pay
+        ax.scatter(X[log01_neg, 0], X[log01_neg, 1], c=_tango_color(color_0, 0),
+                   edgecolors=_tango_color(color_0, 2), marker='s')
+        # white: do not pay
+        ax.scatter(X[log10_neg, 0], X[log10_neg, 1], c=_tango_color(color_1, 0),
+                   edgecolors=_tango_color(color_1, 2), marker='o')
+        # white: pay
+        ax.scatter(X[log11_neg, 0], X[log11_neg, 1], c=_tango_color(color_1, 0),
+                   edgecolors=_tango_color(color_1, 2), marker='s')
+
+        # non-white: do not pay
+        ax.scatter(X[log00_pos, 0], X[log00_pos, 1], c=_tango_color(color_pos, 0),
+                   edgecolors=_tango_color(color_0, 2), marker='o')
+        # non-white: pay
+        ax.scatter(X[log01_pos, 0], X[log01_pos, 1], c=_tango_color(color_pos, 0),
+                   edgecolors=_tango_color(color_0, 2), marker='s')
+        # white: do not pay
+        ax.scatter(X[log10_pos, 0], X[log10_pos, 1], c=_tango_color(color_pos, 0),
+                   edgecolors=_tango_color(color_1, 2), marker='o')
+        # white: pay
+        ax.scatter(X[log11_pos, 0], X[log11_pos, 1], c=_tango_color(color_pos, 0),
+                   edgecolors=_tango_color(color_1, 2), marker='s')
+        if prototypes is not None:
+            ax.scatter(prototypes[0, 0], prototypes[0, 1], c=_tango_color(color_0, 1),
+                       edgecolors=_tango_color(color_0, 2), linewidths=2, s=150, marker='D')
+            ax.scatter(prototypes[1, 0], prototypes[1, 1], c=_tango_color(color_1, 1),
+                       edgecolors=_tango_color(color_1, 2), linewidths=2, s=150, marker='D')
+    if verbose:
+        print("----")
+    return ax
+
+
+def plot_prepared_dist(ax):
+    """
+        Plots a prepared data set.
+
+        Parameters
+        ----------
+        ax: axes
+            Axes object that holds the plotting information.
+    """
+    ax.plot()
+    plt.show()
+    return
+
+
+def plot_dist(X, C, Y, Y_pred, prototypes=None, verbose=False):
+    """
+        Prints classification of a given data set.
+
+        Parameters
+        ----------
+        X: np.ndarray of floats
+            Array containing all data point coordinates.
+
+        C: np.array of bool
+            Array containing all data point subclass memberships.
+
+        Y: np.array of bool
+            Array containing all data point outcomes.
+
+        Y_pred: np.array of bool
+            Array containing all data point predicted outcomes.
+
+        prototypes: np.ndarray of floats
+            Array of prototype locations.
+
+        verbose: bool
+                Flag to show status prints.
+
+    """
+    ax = prepare_plot(X, C, Y, Y_pred, prototypes, verbose=False)
+    plot_prepared_dist(ax, verbose)
+    return
+
+
+def print_dist_glvq(X, C, Y, verbose=False):
+    """
+        Prints classification of a given data set with GLVQ.
+
+        Parameters
+        ----------
+        X: np.ndarray of floats
+            Array containing all data point coordinates.
+
+        C: np.array of bool
+            Array containing all data point subclass memberships.
+
+        Y: np.array of bool
+            Array containing all data point outcomes.
+
+        verbose: bool
+                Flag to show status prints.
+    """
+
+    # Train a GLVQ model
+    model = GlvqModel()
+    model.fit(X, Y)
+
+    # find prediction of model for all points
+    Y_pred = model.predict(X)
+
+    if verbose:
+        n_pos = list(Y_pred).count(True)
+        print("Number of positive values in Y_pred: {}".format(n_pos))
+        print("----")
+
+    plot_dist(X, C, Y, Y_pred, model.w_)
+    return
 
 
 def normalize_feature(feature):
@@ -451,6 +468,7 @@ def normalize_feature(feature):
     return normalized_feature
 
 
+# TODO: Check that True == 1
 def normalize_binary_feature(feature):
     """
         Normalizes a feature by l2 norm.
@@ -522,6 +540,9 @@ def equilateral_simplex(n, verbose=False):
         ----------
         n: int
             Number of dimensions.
+
+        verbose: bool
+                Flag to show status prints.
 
         Returns
         -------

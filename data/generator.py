@@ -607,3 +607,46 @@ def check_dist(vertices):
                 print("dist of {}\t and \t{}\t: \t{}".format(v, u, np.linalg.norm(v-u)))
 
     return
+
+
+def normalize_metric_feature(feature):
+    """
+        Normalizes a feature by l2 norm.
+
+        Parameters
+        ----------
+        feature: (n x 1) np.array of floats
+            Metric feature vector.
+
+        Returns
+        -------
+        normalized_feature: (n x 1) np.array of floats
+            Normalized feature vector.
+    """
+    max_val = 0
+    min_val = np.inf
+
+    print("type(feature): {}".format(type(feature)))
+    print("feature.shape: {}".format(feature.shape))
+    print("feature.T[0]: {}".format(feature.T[0]))
+
+    n, m = feature.shape
+
+    normalized_feature = np.zeros((n, m))
+
+    for i in range(m):
+
+        normalized_feature[0][i] = int(feature[0][i])
+
+        val = normalized_feature[0][i]
+
+        if val > max_val:
+            max_val = val
+        elif val < min_val:
+            min_val = val
+
+    dist = max_val - min_val
+
+    normalized_feature = normalized_feature / dist
+
+    return normalized_feature

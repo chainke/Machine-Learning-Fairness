@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn_lvq.utils import _tango_color
 
-from glvq.plot_2d import to_tango_colors
-from glvq.plot_2d import plot2d
+# from glvq.plot_2d import to_tango_colors
+# from glvq.plot_2d import plot2d
 
 from sklearn.utils import shuffle
 from sklearn_lvq.glvq import GlvqModel
@@ -381,6 +381,21 @@ def plot_prepared_dist(ax):
             Axes object that holds the plotting information.
     """
     ax.plot()
+    plt.show()
+    return
+
+
+def plot_prepared_dist_multi(ax_list):
+    """
+        Plots a prepared data set.
+
+        Parameters
+        ----------
+        ax: axes
+            Axes object that holds the plotting information.
+    """
+    for ax in ax_list:
+        ax.plot()
     plt.show()
     return
 

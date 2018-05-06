@@ -16,7 +16,6 @@ from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
 
 
 class DataGen:
-
     def __init__(self, verbose=False):
         """
             Constructor. More needed?
@@ -90,7 +89,7 @@ class DataGen:
 
     # NOT RUNNING YET!
     def generate_two_bubbles_multi_dim(self, number_data_points, proportion_0, proportion_0_urban, proportion_1_urban,
-                             proportion_0_pay, proportion_1_pay, std):
+                                       proportion_0_pay, proportion_1_pay, std):
         """
             Generates data set around two bubbles (normal distributions).
             Important:  The second feature is still used for shift and to determine
@@ -166,7 +165,6 @@ class DataGen:
             else:
                 X_suburb = np.concatenate((X_suburb, np.random.randn(m_suburb, 1) * std[dim]), axis=1)
 
-
         # shift suburban population
         shift = np.zeros(len(std))
         shift[0] = 1
@@ -235,7 +233,9 @@ class DataGen:
 
         return X_full, C_full, Y_full
 
-def prepare_plot(X, C, Y, Y_pred = None, prototypes=None, verbose=False):
+
+def prepare_plot(X, C, Y, Y_pred=None, prototypes=None, verbose=False, title="Plot", label1="feature 1",
+                 label2="feature 2"):
     """
         Generated plot information for a given data set with given classification.
 
@@ -281,10 +281,10 @@ def prepare_plot(X, C, Y, Y_pred = None, prototypes=None, verbose=False):
 
     # Plot the data and the prototypes as well
     fig = plt.figure()
-    fig.canvas.set_window_title("LVQ with continuous distance to city center")
+    fig.canvas.set_window_title(title)
     ax = fig.add_subplot(111)
-    ax.set_xlabel("Distance from City Center")
-    ax.set_ylabel("Income")
+    ax.set_xlabel(label1)
+    ax.set_ylabel(label2)
 
     if Y_pred is None:
         # non-white: do not pay
@@ -529,7 +529,7 @@ def normalize_category_feature(feature):
 
     vertices = equilateral_simplex(len(values))
 
-    #check_dist(vertices)
+    # check_dist(vertices)
 
     # dimension of each vertex
     _, m = vertices.shape
@@ -576,7 +576,7 @@ def equilateral_simplex(n, verbose=False):
     for i in range(1, n):
         if verbose:
             print("i: {}".format(i))
-        for j in range(0, (i-1)):
+        for j in range(0, (i - 1)):
             if verbose:
                 print("i: {}\tj: {}\tp[j]: {}".format(i, j, p[j]))
             vertices[i][j] = p[j + 1]
@@ -604,7 +604,7 @@ def check_dist(vertices):
         print(v)
         for u in vertices:
             if not (v == u).all():
-                print("dist of {}\t and \t{}\t: \t{}".format(v, u, np.linalg.norm(v-u)))
+                print("dist of {}\t and \t{}\t: \t{}".format(v, u, np.linalg.norm(v - u)))
 
     return
 
@@ -636,7 +636,7 @@ def normalize_metric_feature(feature):
 
     for i in range(m):
 
-        normalized_feature[0][i] = int(feature[0][i])
+        normalized_feature[0][i] = feature[0][i].astype(np.float)
 
         val = normalized_feature[0][i]
 

@@ -53,7 +53,6 @@ class _LvqBaseModel(BaseEstimator, ClassifierMixin):
         # initialize prototypes
         if self.initial_prototypes is None:
             self.w_ = np.empty([np.sum(nb_ppc), nb_features], dtype=np.double)
-            print(self.w_)
             self.c_w_ = np.empty([nb_ppc.sum()], dtype=self.classes_.dtype)
             pos = 0
             for actClass in range(nb_classes):

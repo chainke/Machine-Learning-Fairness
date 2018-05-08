@@ -89,6 +89,8 @@ def preprocess_data(data, feature_types, verbose=False):
             processed_col = generator.normalize_feature(col)
         elif feature_types[i] is "categories":
             processed_col = generator.normalize_category_feature(col)
+        elif feature_types[i] is "metric":
+            processed_col = generator.normalize_metric_feature(col)
         elif feature_types[i] is "skip":
             continue
 
@@ -118,8 +120,8 @@ def process_gcd_to_csv(in_path="gcd.csv", out_path="gcd_processed.csv"):
     """
     read_data = get_data(in_path)
 
-    types = ["binary", "categories", "skip", "categories", "categories", "skip", "categories",
-             "categories", "categories", "categories", "categories", "categories", "categories", "skip",
+    types = ["binary", "categories", "metric", "categories", "categories", "metric", "categories",
+             "categories", "categories", "categories", "categories", "categories", "categories", "metric",
              "categories", "categories", "categories", "categories", "categories", "binary", "binary"]
 
     proc_data = preprocess_data(read_data[1:], types)

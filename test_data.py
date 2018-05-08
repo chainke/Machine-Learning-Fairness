@@ -101,11 +101,33 @@ def test_gcd():
     #print(glvq_predicted)
 
     print("\n\nfairness on abs_glvq label: \n")
-    absglvq = abs_glvq.MeanDiffGlvqModel()
+    prot1 = np.random.ranf(51)
+    prot0 = prot1.copy()
+    prot0[50] = 0.
+    prot1[50] = 1.
+    prots = [prot0.tolist(),prot1.tolist()]
+
+    # this is sad
+    # uh....   :(
+
+    absglvq = abs_glvq.MeanDiffGlvqModel(alpha=0, prototypes_per_class=1, initial_prototypes=prots,
+                 max_iter=2500, gtol=1e-5, beta=2, C=None,)
     absglvq.fit_fair(X,y,protected)
     absglvq_predicted = absglvq.predict(X)
 
-    #print(absglvq_predicted)
+    test = []
+    test2 = []
+
+    for i in range(len(X)):
+        test.append([X[i][5],X[i][6]])
+        test2.append([X[i][3],X[i][4]])
+
+
+    print(test)
+    ax1 = generator.prepare_plot(X=np.array(test), C=protected, Y=y, Y_pred=absglvq_predicted, prototypes=absglvq.w_)
+    ax2 = generator.prepare_plot(X=np.array(test2), C=protected, Y=y, Y_pred=absglvq_predicted, prototypes=absglvq.w_)
+    generator.plot_prepared_dist_multi([ax1, ax2])
+    print(absglvq_predicted)
 
     print("\n\nfairness on quad_glvq label: \n")
     quadglvq = quad_glvq.MeanDiffGlvqModel()

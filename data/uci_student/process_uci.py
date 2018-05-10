@@ -19,6 +19,8 @@ def process_uci_data():
 	    data_reader = csv.reader(csvfile, delimiter=';', quotechar='|')
 
 	    for row in data_reader:
+	    	# only use the first 30 features because the last 3 are related to specific courses
+	    	# if you want to use all data, you have to change the data of the last 3 features to floats
 	        csv_data.append(row[:30])
 
 	csv_data = np.array(csv_data[1:])
@@ -81,6 +83,9 @@ def get_students_data():
 	y = []
 	protected = []
 
+	# for using other labels and protected features, just change this numbers
+	# attention: since the data is already processed, you have to find the 
+	# collumns for label and protected in the processed_data.csv
 	y_position = 15 # if it is school support
 	protected_position = 1 # if it is gender
 

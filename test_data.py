@@ -3,6 +3,7 @@ import data.generator as generator
 import numpy as np
 from GLVQ.glvq import GlvqModel
 import measures.functions as measure
+import data.uci_student.process_uci as uci
 
 import quad_fair_glvq as quad_glvq
 import abs_fair_glvq as abs_glvq
@@ -135,8 +136,40 @@ def test_gcd():
     quadglvq_predicted = quadglvq.predict(X)
 
     #print(quadglvq_predicted)
-    
 
-test_gcd()
+def test_uci_student():
+    X, y, protected = uci.get_students_data()
+
+    print("\n\nfairness on gcd label: \n")
+    measure.printAbsoluteMeasures(y, protected)
+
+    
+    print("\n\nfairness on glvq label: \n")
+    glvq = GlvqModel()
+    glvq.fit(X,y)
+    glvq_predicted = glvq.predict(X)
+    #print(glvq_predicted)
+    # predicts only 0 :(
+    measure.printAbsoluteMeasures(glvq_predicted.tolist(), protected)
+
+    
+    print("\n\nfairness on abs_glvq label: \n")
+    absglvq = abs_glvq.MeanDiffGlvqModel()
+    absglvq.fit_fair(X,y,protected)
+    absglvq_predicted = absglvq.predict(X)
+    #print(absglvq_predicted)
+    # predicts only 0 :(
+    measure.printAbsoluteMeasures(absglvq_predicted.tolist(), protected)
+
+    
+    print("\n\nfairness on quad_glvq label: \n")
+    quadglvq = quad_glvq.MeanDiffGlvqModel()
+    quadglvq.fit_fair(X,y,protected)
+    quadglvq_predicted = quadglvq.predict(X)
+    #print(quadglvq_predicted)
+    # predicts only 0 :(
+    measure.printAbsoluteMeasures(quadglvq_predicted.tolist(), protected)
+
+test_uci_student()
 
 

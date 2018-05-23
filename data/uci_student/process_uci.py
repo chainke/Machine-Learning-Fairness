@@ -5,17 +5,26 @@ import data.generator as generator
 def process_uci_data():
 	processed_data_name = "data/uci-student/dataset_processed.csv"
 	feature_types = ["binary", "binary", "metric", "binary", "binary", 
-	"binary", "category", "category", "category", "category", 
-	"category", "category", "category", "category", "category", 
+	"binary", "skip", "skip", "skip", "skip",
+	"skip", "skip", "skip", "skip", "skip",
 	"binary", "binary", "binary", "binary",	"binary", 
 	"binary", "binary", "binary", "metric", "metric", 
 	"metric", "metric", "metric", "metric", "metric", 
 	"metric", "metric", "metric"]
+# def process_uci_data():
+# 	processed_data_name = "data/uci-student/dataset_processed.csv"
+# 	feature_types = ["binary", "binary", "metric", "binary", "binary",
+# 	"binary", "category", "category", "category", "category",
+# 	"category", "category", "category", "category", "category",
+# 	"binary", "binary", "binary", "binary",	"binary",
+# 	"binary", "binary", "binary", "metric", "metric",
+# 	"metric", "metric", "metric", "metric", "metric",
+# 	"metric", "metric", "metric"]
 
 	# read data
 	csv_data = []
 
-	with open("data/uci_student/student-por.csv", newline='') as csvfile:
+	with open("student-por.csv", newline='') as csvfile:
 	    data_reader = csv.reader(csvfile, delimiter=';', quotechar='|')
 
 	    for row in data_reader:
@@ -59,7 +68,7 @@ def process_uci_data():
 	processed_data = processed_data.T
 	processed_data = processed_data[:,1:]
 	print(processed_data[0:3])
-	with open("data/uci_student/dataset_processed.csv", 'w', newline = '') as csvfile:
+	with open("dataset_processed.csv", 'w', newline = '') as csvfile:
 		dataWriter = csv.writer(csvfile, delimiter=';')
 		for i in range(len(processed_data)):
 			dataWriter.writerow(processed_data[i])
@@ -86,7 +95,7 @@ def get_students_data():
 	# for using other labels and protected features, just change this numbers
 	# attention: since the data is already processed, you have to find the 
 	# collumns for label and protected in the dataset_processed.csv
-	y_position = 15 # if it is school support
+	y_position = 7 # if it is school support
 	protected_position = 1 # if it is gender
 
 	for i in range(len(processed_data)):
@@ -106,3 +115,5 @@ def get_students_data():
 	#print(protected[0:3])
 
 	return X, y, protected
+
+# process_uci_data()

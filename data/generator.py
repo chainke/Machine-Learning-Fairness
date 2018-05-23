@@ -530,7 +530,7 @@ def normalize_category_feature(feature):
 
     # check_dist(vertices)
 
-    # dimension of each vertex
+# dimension of each vertex
     _, m = vertices.shape
 
     normalized_feature = np.zeros((n, m))

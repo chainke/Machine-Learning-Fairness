@@ -250,19 +250,19 @@ ax1.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecol
             linewidths=2, s=150, marker='D')
 ax1.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2),
             linewidths=2, s=150, marker='D')
-
-ax2.set_xlabel("Distance from City Center")
-ax2.set_ylabel("Income")
-ax2.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
-ax2.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
-            marker='o')
-ax2.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
-ax2.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
-            marker='s')
-ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
-            linewidths=2, s=150, marker='D')
-ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
-            edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
+#
+#ax2.set_xlabel("Distance from City Center")
+#ax2.set_ylabel("Income")
+#ax2.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+#ax2.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+#            marker='o')
+#ax2.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
+#ax2.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+#            marker='s')
+#ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
+#            linewidths=2, s=150, marker='D')
+#ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
+#            edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
 
 ax3.set_xlabel("Distance from City Center")
 ax3.set_ylabel("Income")

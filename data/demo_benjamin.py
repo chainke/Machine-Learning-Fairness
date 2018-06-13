@@ -12,6 +12,7 @@ from sklearn_lvq.glvq import GlvqModel
 from abs_fair_glvq import MeanDiffGlvqModel as absolutFairGlvqModel
 from quad_fair_glvq import MeanDiffGlvqModel as quadraticFairGlvqModel
 from normalized_fair_glvq import NormMeanDiffGlvqModel as NormFairGlvqModel
+from matplotlib import cm
 
 
 # Assume we analyze the credit scoring algorithm of a bank. The credit scoring algorithm
@@ -150,8 +151,6 @@ fair_Y_predicted = fair_model.predict(X)
 # Check some fairness measures
 norm_fair_Y_predicted = norm_fair_model.predict(X)
 
-
-
 # Compute the mean difference, that is, the difference between the average credit score for
 # whites and non-whites
 # First, we need the credit score for that, which is _not_ the classification, but the function
@@ -198,6 +197,45 @@ print('fraction of whites who would pay their money back but get a bad score: {}
 print('accuracy of the classifier:   ' + str(norm_fair_model.score(X, Y)))
 # ax1  = fig.add_subplot(111)
 f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+
+h = .02  # step size in the mesh
+
+x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+ax1.set_xlim(xx.min(), xx.max())
+ax1.set_ylim(yy.min(), yy.max())
+
+Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+ax1.contourf(xx, yy, Z, cmap=cm.Pastel1, alpha=.8)
+
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+ax2.set_xlim(xx.min(), xx.max())
+ax2.set_ylim(yy.min(), yy.max())
+
+Z = fair_model.predict(np.c_[xx.ravel(), yy.ravel()])
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+ax2.contourf(xx, yy, Z, cmap=cm.Pastel1, alpha=.8)
+
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+ax3.set_xlim(xx.min(), xx.max())
+ax3.set_ylim(yy.min(), yy.max())
+
+Z = norm_fair_model.predict(np.c_[xx.ravel(), yy.ravel()])
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+ax3.contourf(xx, yy, Z, cmap=cm.Pastel1, alpha=.8)
+
+
 # Plot the data and the prototypes as well
 f.canvas.set_window_title("LVQ with continuous distance to city center")
 ax1.set_xlabel("Distance from City Center")
@@ -238,4 +276,5 @@ ax3.scatter(norm_fair_model.w_[0, 0], norm_fair_model.w_[0, 1], c=tango_color('s
             linewidths=2, s=150, marker='D')
 ax3.scatter(norm_fair_model.w_[1, 0], norm_fair_model.w_[1, 1], c=tango_color('scarletred', 1),
             edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
+
 plt.show()

@@ -205,7 +205,7 @@ class MeanDiffGlvqModel(_LvqBaseModel):
         d_wrong[label_equals_prototype] = np.inf
         distwrong = d_wrong.min(1)
 
-        d_correct = dist
+        d_correct = dist.copy()
         d_correct[np.invert(label_equals_prototype)] = np.inf
         distcorrect = d_correct.min(1)
 

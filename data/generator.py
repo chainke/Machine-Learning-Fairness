@@ -87,7 +87,6 @@ class DataGen:
 
         return X, C, Y
 
-    # NOT RUNNING YET!
     def generate_two_bubbles_multi_dim(self, number_data_points, proportion_0, proportion_0_urban, proportion_1_urban,
                                        proportion_0_pay, proportion_1_pay, std):
         """
@@ -531,7 +530,7 @@ def normalize_category_feature(feature):
 
     # check_dist(vertices)
 
-    # dimension of each vertex
+# dimension of each vertex
     _, m = vertices.shape
 
     normalized_feature = np.zeros((n, m))
@@ -647,6 +646,6 @@ def normalize_metric_feature(feature):
 
     dist = max_val - min_val
 
-    normalized_feature = normalized_feature / dist
+    normalized_feature = (normalized_feature - min_val) / dist
 
     return normalized_feature

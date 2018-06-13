@@ -49,11 +49,11 @@ p0 = 0.8
 # proportion of white people who do not pay their money back
 p1 = 0.5
 # proportion of non-white people in the overall data set
-q = 0.5
+q = 0.3
 
 # fairness factor
 alpha1 = 200
-alpha2 = 200
+alpha2 = 400
 # generate a vector C denoting the racial information
 C = np.zeros(m, dtype=bool)
 m0 = int(m * q)
@@ -101,7 +101,8 @@ D = model._compute_distance(X)
 f = np.divide(D[:, 0] - D[:, 1], D[:, 0] + D[:, 1])
 f = np.divide(np.ones(m), 1 + np.exp(-f))
 
-print('mean difference: {}'.format(np.mean(f[C]) - np.mean(f[np.logical_not(C)])))
+minimum = min(np.mean(f)/q, (1-np.mean(f))/(1-q))
+print('normalized mean difference: {}'.format((np.mean(f[C]) - np.mean(f[np.logical_not(C)]))/minimum))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified
@@ -138,7 +139,7 @@ def getTrainedModel():
 
 
 protected_label = getProtected()
-fair_model = quadraticFairGlvqModel(alpha1)
+fair_model = NormFairGlvqModel(alpha1)
 fair_model.fit_fair(X, Y, protected_label)
 
 
@@ -165,7 +166,8 @@ norm_fair_D = norm_fair_model._compute_distance(X)
 fff = np.divide(norm_fair_D[:, 0] - D[:, 1], norm_fair_D[:, 0] + norm_fair_D[:, 1])
 fff = np.divide(np.ones(m), 1 + np.exp(-fff))
 
-print('[fair] mean difference: {}'.format(np.mean(ff[C]) - np.mean(ff[np.logical_not(C)])))
+minimum = min(np.mean(ff)/q, (1-np.mean(ff))/(1-q))
+print('[fair] alpha1 normalized mean difference: {}'.format((np.mean(ff[C]) - np.mean(ff[np.logical_not(C)]))/minimum))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified
@@ -181,7 +183,8 @@ print('fraction of whites who would pay their money back but get a bad score: {}
 print('accuracy of the classifier:   ' + str(fair_model.score(X, Y)))
 
 print(' ')
-print('[norm fair] mean difference: {}'.format(np.mean(fff[C]) - np.mean(fff[np.logical_not(C)])))
+minimum = min(np.mean(fff)/q, (1-np.mean(fff))/(1-q))
+print('[fair] alpha 2 normalized mean difference: {}'.format((np.mean(fff[C]) - np.mean(fff[np.logical_not(C)]))/minimum))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified
@@ -250,19 +253,19 @@ ax1.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecol
             linewidths=2, s=150, marker='D')
 ax1.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2),
             linewidths=2, s=150, marker='D')
-#
-#ax2.set_xlabel("Distance from City Center")
-#ax2.set_ylabel("Income")
-#ax2.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
-#ax2.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
-#            marker='o')
-#ax2.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
-#ax2.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
-#            marker='s')
-#ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
-#            linewidths=2, s=150, marker='D')
-#ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
-#            edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
+
+ax2.set_xlabel("Distance from City Center")
+ax2.set_ylabel("Income")
+ax2.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
+ax2.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+           marker='o')
+ax2.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
+ax2.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+           marker='s')
+ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
+           linewidths=2, s=150, marker='D')
+ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
+           edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
 
 ax3.set_xlabel("Distance from City Center")
 ax3.set_ylabel("Income")

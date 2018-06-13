@@ -116,6 +116,8 @@ f = np.divide(np.ones(Y.shape[0]), 1 + np.exp(-f))
 
 print('mean difference: {}'.format(np.mean(f[Z == 0]) - np.mean(f[Z == 1])))
 
+minimum = min(np.mean(f)/(1- np.mean(Z == 1)), (1-np.mean(f))/(np.mean(Z == 1)))
+print('normalized mean difference: {}'.format((np.mean(f[Z == 0]) - np.mean(f[Z == 1])/minimum)))
 
 #------------------------------
 

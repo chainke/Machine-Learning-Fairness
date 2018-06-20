@@ -89,7 +89,8 @@ colors = {
     "butter": ['#fce94f', 'edd400', '#c4a000'],
     "chocolate": ['#e9b96e', '#c17d11', '#8f5902'],
     "aluminium": ['#eeeeec', '#d3d7cf', '#babdb6', '#888a85', '#555753',
-                  '#2e3436']
+                  '#2e3436'],
+    "darkorange": ['#f66b00', '#f66b00', '#8D4610'],
 }
 
 color_names = list(colors.keys())

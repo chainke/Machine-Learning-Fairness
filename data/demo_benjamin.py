@@ -49,7 +49,7 @@ p0 = 0.8
 # proportion of white people who do not pay their money back
 p1 = 0.5
 # proportion of non-white people in the overall data set
-q = 0.3
+q = 0.5
 
 # fairness factor
 alpha1 = 200
@@ -214,7 +214,7 @@ Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
 
 # Put the result into a color plot
 Z = Z.reshape(xx.shape)
-ax1.contourf(xx, yy, Z, cmap=cm.Pastel1, alpha=.8)
+ax1.contourf(xx, yy, Z, colors = ('#C9FFD2', '#000000', '#FFF5C9', 'w'), alpha=.8)
 
 xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
@@ -225,7 +225,7 @@ Z = fair_model.predict(np.c_[xx.ravel(), yy.ravel()])
 
 # Put the result into a color plot
 Z = Z.reshape(xx.shape)
-ax2.contourf(xx, yy, Z, cmap=cm.Pastel1, alpha=.8)
+ax2.contourf(xx, yy, Z, colors = ('#C9FFD2', '#000000', '#FFF5C9', 'w'), alpha=.8)
 
 xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
@@ -236,48 +236,48 @@ Z = norm_fair_model.predict(np.c_[xx.ravel(), yy.ravel()])
 
 # Put the result into a color plot
 Z = Z.reshape(xx.shape)
-ax3.contourf(xx, yy, Z, cmap=cm.Pastel1, alpha=.8)
+ax3.contourf(xx, yy, Z, colors = ('#C9FFD2', '#000000', '#FFF5C9', 'w'), alpha=.8)
 
 
 # Plot the data and the prototypes as well
 f.canvas.set_window_title("LVQ with continuous distance to city center")
 ax1.set_xlabel("Distance from City Center")
 ax1.set_ylabel("Income")
-ax1.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
-ax1.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
-            marker='o')
-ax1.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
-ax1.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
-            marker='s')
-ax1.scatter(model.w_[0, 0], model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
-            linewidths=2, s=150, marker='D')
-ax1.scatter(model.w_[1, 0], model.w_[1, 1], c=tango_color('scarletred', 1), edgecolors=tango_color('scarletred', 2),
-            linewidths=2, s=150, marker='D')
+ax1.set_title('alpha = 0')
+ax1.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o', label="protected, y = 0")
+ax1.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D', marker='o', label="protected, y = 1")
+ax1.scatter(X[log10, 0], X[log10, 1], c='#00cc00', edgecolors='#006600', marker='s', label="not protected, y = 0")
+ax1.scatter(X[log11, 0], X[log11, 1], c='#fc9f00', edgecolors='#E9890A', marker='s',label="not protected, y = 1")
+ax1.scatter(model.w_[0, 0], model.w_[0, 1], c='#2c7a5d', edgecolors='#10553c',
+            linewidths=2, s=150, marker='D', label="prototype, z = 0")
+ax1.scatter(model.w_[1, 0], model.w_[1, 1], c='#CC6600', edgecolors='#95682D',
+            linewidths=2, s=150, marker='D',label="prototype, z = 1")
+ax1.legend(loc = 2)
 
 ax2.set_xlabel("Distance from City Center")
 ax2.set_ylabel("Income")
-ax2.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
-ax2.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+ax2.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o')
+ax2.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D',
            marker='o')
-ax2.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
-ax2.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+ax2.scatter(X[log10, 0], X[log10, 1], c='#00cc00', edgecolors='#006600', marker='s')
+ax2.scatter(X[log11, 0], X[log11, 1], c='#fc9f00', edgecolors='#E9890A',
            marker='s')
-ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
+ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c='#2c7a5d', edgecolors='#10553c',
            linewidths=2, s=150, marker='D')
-ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c=tango_color('scarletred', 1),
-           edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-
+ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c='#CC6600', edgecolors='#95682D', linewidths=2, s=150, marker='D')
+ax2.set_title('alpha = 200')
 ax3.set_xlabel("Distance from City Center")
 ax3.set_ylabel("Income")
-ax3.scatter(X[log00, 0], X[log00, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='o')
-ax3.scatter(X[log01, 0], X[log01, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+ax3.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o')
+ax3.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D',
             marker='o')
-ax3.scatter(X[log10, 0], X[log10, 1], c=tango_color('skyblue', 0), edgecolors=tango_color('skyblue', 2), marker='s')
-ax3.scatter(X[log11, 0], X[log11, 1], c=tango_color('scarletred', 0), edgecolors=tango_color('scarletred', 2),
+ax3.scatter(X[log10, 0], X[log10, 1], c='#00cc00', edgecolors='#006600', marker='s')
+ax3.scatter(X[log11, 0], X[log11, 1],  c='#fc9f00', edgecolors='#E9890A',
             marker='s')
-ax3.scatter(norm_fair_model.w_[0, 0], norm_fair_model.w_[0, 1], c=tango_color('skyblue', 1), edgecolors=tango_color('skyblue', 2),
+ax3.scatter(norm_fair_model.w_[0, 0], norm_fair_model.w_[0, 1],  c='#2c7a5d', edgecolors='#10553c',
             linewidths=2, s=150, marker='D')
-ax3.scatter(norm_fair_model.w_[1, 0], norm_fair_model.w_[1, 1], c=tango_color('scarletred', 1),
-            edgecolors=tango_color('scarletred', 2), linewidths=2, s=150, marker='D')
-
+ax3.scatter(norm_fair_model.w_[1, 0], norm_fair_model.w_[1, 1], c='#CC6600', edgecolors='#95682D', linewidths=2, s=150, marker='D')
+ax3.set_title('alpha = 400')
+f.set_size_inches(18.5,10.5)
+f.savefig('./evaluation/05ratio.eps', format='eps')
 plt.show()

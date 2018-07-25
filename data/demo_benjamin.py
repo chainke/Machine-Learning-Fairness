@@ -49,7 +49,7 @@ p0 = 0.8
 # proportion of white people who do not pay their money back
 p1 = 0.5
 # proportion of non-white people in the overall data set
-q = 0.5
+q = 0.2
 
 # fairness factor
 alpha1 = 200
@@ -102,6 +102,7 @@ f = np.divide(D[:, 0] - D[:, 1], D[:, 0] + D[:, 1])
 f = np.divide(np.ones(m), 1 + np.exp(-f))
 
 minimum = min(np.mean(f)/q, (1-np.mean(f))/(1-q))
+print('mean difference: {}'.format((np.mean(f[C]) - np.mean(f[np.logical_not(C)]))))
 print('normalized mean difference: {}'.format((np.mean(f[C]) - np.mean(f[np.logical_not(C)]))/minimum))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
@@ -139,11 +140,161 @@ def getTrainedModel():
 
 
 protected_label = getProtected()
+
+# Normalized Mean Difference
 fair_model = NormFairGlvqModel(alpha1)
 fair_model.fit_fair(X, Y, protected_label)
 
-
 norm_fair_model = NormFairGlvqModel(alpha2)
+norm_fair_model.fit_fair(X, Y, protected_label)
+
+
+# Check some fairness measures
+fair_Y_predicted = fair_model.predict(X)
+
+# Check some fairness measures
+norm_fair_Y_predicted = norm_fair_model.predict(X)
+
+# Compute the mean difference, that is, the difference between the average credit score for
+# whites and non-whites
+# First, we need the credit score for that, which is _not_ the classification, but the function
+# sigma( (d[0] - d[1]) / (d[0] + d[1]) ) where d[0] is the distance of the data point to the
+# prototype for people who will pay their money back and d[1] is the distance of the data point
+# to the prototype for people who will _not_ pay their money back.
+fair_D = fair_model._compute_distance(X)
+ff = np.divide(fair_D[:, 0] - D[:, 1], fair_D[:, 0] + fair_D[:, 1])
+ff = np.divide(np.ones(m), 1 + np.exp(-ff))
+
+norm_fair_D = norm_fair_model._compute_distance(X)
+fff = np.divide(norm_fair_D[:, 0] - D[:, 1], norm_fair_D[:, 0] + norm_fair_D[:, 1])
+fff = np.divide(np.ones(m), 1 + np.exp(-fff))
+
+
+minimum = min(np.mean(ff)/q, (1-np.mean(ff))/(1-q))
+print('[fair] alpha1 normalized mean difference: {}'.format((np.mean(ff[C]) - np.mean(ff[np.logical_not(C)]))/minimum))
+
+# Compute predictive equality measurements, that is, the fraction of people in a protected group
+# who are erroneously classified
+print('\npredictive equality measurements:')
+print('fraction of non-whites who would not pay their money back but get a good score: {}'.format(
+    np.mean(np.not_equal(fair_Y_predicted[log00], Y[log00]))))
+print('fraction of non-whites who would pay their money back but get a bad score: {}'.format(
+    np.mean(np.not_equal(fair_Y_predicted[log01], Y[log01]))))
+print('fraction of whites who would not pay their money back but get a good score: {}'.format(
+    np.mean(np.not_equal(fair_Y_predicted[log10], Y[log10]))))
+print('fraction of whites who would pay their money back but get a bad score: {}'.format(
+    np.mean(np.not_equal(fair_Y_predicted[log11], Y[log11]))))
+print('accuracy of the classifier:   ' + str(fair_model.score(X, Y)))
+
+print(' ')
+minimum = min(np.mean(fff)/q, (1-np.mean(fff))/(1-q))
+print('[fair] alpha 2 normalized mean difference: {}'.format((np.mean(fff[C]) - np.mean(fff[np.logical_not(C)]))/minimum))
+
+# Compute predictive equality measurements, that is, the fraction of people in a protected group
+# who are erroneously classified
+print('\npredictive equality measurements:')
+print('fraction of non-whites who would not pay their money back but get a good score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log00], Y[log00]))))
+print('fraction of non-whites who would pay their money back but get a bad score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log01], Y[log01]))))
+print('fraction of whites who would not pay their money back but get a good score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log10], Y[log10]))))
+print('fraction of whites who would pay their money back but get a bad score: {}'.format(
+    np.mean(np.not_equal(norm_fair_Y_predicted[log11], Y[log11]))))
+print('accuracy of the classifier:   ' + str(norm_fair_model.score(X, Y)))
+print(' ')
+# ax1  = fig.add_subplot(111)
+f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+
+h = .02  # step size in the mesh
+
+x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+ax1.set_xlim(xx.min(), xx.max())
+ax1.set_ylim(yy.min(), yy.max())
+
+Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+ax1.contourf(xx, yy, Z, colors = ('#C9FFD2', '#000000', '#FFF5C9', 'w'), alpha=.8)
+
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+ax2.set_xlim(xx.min(), xx.max())
+ax2.set_ylim(yy.min(), yy.max())
+
+Z = fair_model.predict(np.c_[xx.ravel(), yy.ravel()])
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+ax2.contourf(xx, yy, Z, colors = ('#C9FFD2', '#000000', '#FFF5C9', 'w'), alpha=.8)
+
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+ax3.set_xlim(xx.min(), xx.max())
+ax3.set_ylim(yy.min(), yy.max())
+
+Z = norm_fair_model.predict(np.c_[xx.ravel(), yy.ravel()])
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+ax3.contourf(xx, yy, Z, colors = ('#C9FFD2', '#000000', '#FFF5C9', 'w'), alpha=.8)
+
+
+# Plot the data and the prototypes as well
+f.canvas.set_window_title("LVQ Normalized Mean Difference")
+ax1.set_xlabel("Income")
+ax1.set_ylabel("Distance from City Center")
+ax1.set_title('alpha = 0')
+ax1.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o', label="protected, y = 0")
+ax1.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D', marker='o', label="protected, y = 1")
+ax1.scatter(X[log10, 0], X[log10, 1], c='#00cc00', edgecolors='#006600', marker='s', label="not protected, y = 0")
+ax1.scatter(X[log11, 0], X[log11, 1], c='#fc9f00', edgecolors='#E9890A', marker='s',label="not protected, y = 1")
+ax1.scatter(model.w_[0, 0], model.w_[0, 1], c='#2c7a5d', edgecolors='#10553c',
+            linewidths=2, s=150, marker='D', label="prototype, z = 0")
+ax1.scatter(model.w_[1, 0], model.w_[1, 1], c='#CC6600', edgecolors='#95682D',
+            linewidths=2, s=150, marker='D',label="prototype, z = 1")
+ax1.legend(loc = 2)
+
+ax2.set_xlabel("Income")
+ax2.set_ylabel("Distance from City Center")
+ax2.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o')
+ax2.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D',
+           marker='o')
+ax2.scatter(X[log10, 0], X[log10, 1], c='#00cc00', edgecolors='#006600', marker='s')
+ax2.scatter(X[log11, 0], X[log11, 1], c='#fc9f00', edgecolors='#E9890A',
+           marker='s')
+ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c='#2c7a5d', edgecolors='#10553c',
+           linewidths=2, s=150, marker='D')
+ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c='#CC6600', edgecolors='#95682D', linewidths=2, s=150, marker='D')
+ax2.set_title('alpha = 200')
+ax3.set_xlabel("Income")
+ax3.set_ylabel("Distance from City Center")
+ax3.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o')
+ax3.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D',
+            marker='o')
+ax3.scatter(X[log10, 0], X[log10, 1], c='#00cc00', edgecolors='#006600', marker='s')
+ax3.scatter(X[log11, 0], X[log11, 1],  c='#fc9f00', edgecolors='#E9890A',
+            marker='s')
+ax3.scatter(norm_fair_model.w_[0, 0], norm_fair_model.w_[0, 1],  c='#2c7a5d', edgecolors='#10553c',
+            linewidths=2, s=150, marker='D')
+ax3.scatter(norm_fair_model.w_[1, 0], norm_fair_model.w_[1, 1], c='#CC6600', edgecolors='#95682D', linewidths=2, s=150, marker='D')
+ax3.set_title('alpha = 400')
+f.set_size_inches(18.5,10.5)
+f.savefig('./evaluation/05ratio.eps', format='eps')
+plt.show()
+
+#
+
+
+# Mean Difference
+fair_model = quadraticFairGlvqModel(alpha1)
+fair_model.fit_fair(X, Y, protected_label)
+
+norm_fair_model = quadraticFairGlvqModel(alpha2)
 norm_fair_model.fit_fair(X, Y, protected_label)
 
 # Check some fairness measures
@@ -166,8 +317,11 @@ norm_fair_D = norm_fair_model._compute_distance(X)
 fff = np.divide(norm_fair_D[:, 0] - D[:, 1], norm_fair_D[:, 0] + norm_fair_D[:, 1])
 fff = np.divide(np.ones(m), 1 + np.exp(-fff))
 
-minimum = min(np.mean(ff)/q, (1-np.mean(ff))/(1-q))
-print('[fair] alpha1 normalized mean difference: {}'.format((np.mean(ff[C]) - np.mean(ff[np.logical_not(C)]))/minimum))
+
+
+
+
+print('[fair] alpha1  mean difference: {}'.format((np.mean(ff[C]) - np.mean(ff[np.logical_not(C)]))))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified
@@ -183,8 +337,7 @@ print('fraction of whites who would pay their money back but get a bad score: {}
 print('accuracy of the classifier:   ' + str(fair_model.score(X, Y)))
 
 print(' ')
-minimum = min(np.mean(fff)/q, (1-np.mean(fff))/(1-q))
-print('[fair] alpha 2 normalized mean difference: {}'.format((np.mean(fff[C]) - np.mean(fff[np.logical_not(C)]))/minimum))
+print('[fair] alpha 2  mean difference: {}'.format((np.mean(fff[C]) - np.mean(fff[np.logical_not(C)]))))
 
 # Compute predictive equality measurements, that is, the fraction of people in a protected group
 # who are erroneously classified
@@ -240,9 +393,9 @@ ax3.contourf(xx, yy, Z, colors = ('#C9FFD2', '#000000', '#FFF5C9', 'w'), alpha=.
 
 
 # Plot the data and the prototypes as well
-f.canvas.set_window_title("LVQ with continuous distance to city center")
-ax1.set_xlabel("Distance from City Center")
-ax1.set_ylabel("Income")
+f.canvas.set_window_title("LVQ Normalized Mean Difference")
+ax1.set_xlabel("Income")
+ax1.set_ylabel("Distance from City Center")
 ax1.set_title('alpha = 0')
 ax1.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o', label="protected, y = 0")
 ax1.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D', marker='o', label="protected, y = 1")
@@ -254,8 +407,8 @@ ax1.scatter(model.w_[1, 0], model.w_[1, 1], c='#CC6600', edgecolors='#95682D',
             linewidths=2, s=150, marker='D',label="prototype, z = 1")
 ax1.legend(loc = 2)
 
-ax2.set_xlabel("Distance from City Center")
-ax2.set_ylabel("Income")
+ax2.set_xlabel("Income")
+ax2.set_ylabel("Distance from City Center")
 ax2.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o')
 ax2.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D',
            marker='o')
@@ -266,8 +419,8 @@ ax2.scatter(fair_model.w_[0, 0], fair_model.w_[0, 1], c='#2c7a5d', edgecolors='#
            linewidths=2, s=150, marker='D')
 ax2.scatter(fair_model.w_[1, 0], fair_model.w_[1, 1], c='#CC6600', edgecolors='#95682D', linewidths=2, s=150, marker='D')
 ax2.set_title('alpha = 200')
-ax3.set_xlabel("Distance from City Center")
-ax3.set_ylabel("Income")
+ax3.set_xlabel("Income")
+ax3.set_ylabel("Distance from City Center")
 ax3.scatter(X[log00, 0], X[log00, 1], c='#2c7a5d', edgecolors='#10553c', marker='o')
 ax3.scatter(X[log01, 0], X[log01, 1], c='#CC6600', edgecolors='#95682D',
             marker='o')
@@ -279,5 +432,5 @@ ax3.scatter(norm_fair_model.w_[0, 0], norm_fair_model.w_[0, 1],  c='#2c7a5d', ed
 ax3.scatter(norm_fair_model.w_[1, 0], norm_fair_model.w_[1, 1], c='#CC6600', edgecolors='#95682D', linewidths=2, s=150, marker='D')
 ax3.set_title('alpha = 400')
 f.set_size_inches(18.5,10.5)
-f.savefig('./evaluation/05ratio.eps', format='eps')
+f.savefig('./evaluation/02ratio.eps', format='eps')
 plt.show()
